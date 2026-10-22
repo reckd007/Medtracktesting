@@ -1,0 +1,6 @@
+{
+  "name": "Medtrack",
+  "description": "Smart Medication & Health Management App by Medtrack",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

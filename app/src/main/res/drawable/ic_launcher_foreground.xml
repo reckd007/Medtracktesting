@@ -1,0 +1,37 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Capsule Shadow / Outline -->
+    <path
+        android:fillColor="#0B7268"
+        android:pathData="M38,28 C28,38 28,54 38,64 L54,80 C64,90 80,90 90,80 C100,70 100,54 90,44 L74,28 C64,18 48,18 38,28 Z" />
+
+    <!-- Capsule Body White Half (Top-Left) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M39.5,29.5 C30.5,38.5 30.5,52.5 39.5,61.5 L53.5,47.5 L60.5,40.5 L46.5,26.5 C44,24.5 41.5,27.5 39.5,29.5 Z" />
+
+    <!-- Full Capsule base for smooth corners -->
+    <path
+        android:fillColor="#F0FDFA"
+        android:pathData="M39,29 C30,38 30,53 39,62 L48,71 L71,48 L62,39 C53,30 48,29 39,29 Z" />
+
+    <!-- Teal Half of the Capsule (Bottom-Right) -->
+    <path
+        android:fillColor="#0F766E"
+        android:pathData="M48,71 L57,80 C66,89 81,89 90,80 C99,71 99,56 90,47 L81,38 L58,61 Z" />
+
+    <!-- Capsule Divider Line -->
+    <path
+        android:strokeColor="#134E4A"
+        android:strokeWidth="1.8"
+        android:pathData="M45,74 L74,45" />
+
+    <!-- Small Medical Plus Symbol on White half -->
+    <path
+        android:fillColor="#0D9488"
+        android:pathData="M43,45 h4 v-4 h3 v4 h4 v3 h-4 v4 h-3 v-4 h-4 z" />
+</vector>

@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vanguard Health - Medicine & Health Tracker</title>
+  <style>
+    :root {
+      --bg-sand: #fdfbf7;
+      --card-taupe: #f4ede2;
+      --card-taupe-hover: #eae1d3;
+      --border-taupe: #dcd2c4;
+      --border-taupe-dark: #c5b8a5;
+      --text-espresso: #2c2522;
+      --text-muted: #6b5d56;
+      --terracotta: #b87355;
+      --terracotta-hover: #9e5d42;
+      --amber: #d97706;
+      --amber-bg: #fef3c7;
+      --green: #4d7c0f;
+      --green-bg: #f7fee7;
+      --red: #b91c1c;
+      --red-bg: #fee2e2;
+      --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body.high-contrast {
+      --bg-sand: #f5f0e6;
+      --card-taupe: #e6dac8;
+      --border-taupe: #a89680;
+      --text-espresso: #14100e;
+      --text-muted: #423833;
+      --terracotta: #8c4227;
+    }
+
+    body.compact-mode {
+      font-size: 13px;
+    }
+    body.compact-mode .card {
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    body.compact-mode td, body.compact-mode th {
+      padding: 6px 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-sand);
+      color: var(--text-espresso);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top persistent header */
+    header {
+      background-color: var(--card-taupe);
+      border-bottom: 1px solid var(--border-taupe);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background-color: var(--terracotta);
+      color: #fff;
+      font-weight: 800;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      letter-spacing: -1px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-espresso);
+      text-transform: uppercase;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .sync-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-sand);
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border-taupe);
+    }
+
+    .sync-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--green);
+    }
+
+    .profile-switcher {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    select, input, button, textarea {
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    select {
+      background-color: var(--bg-sand);
+      color: var(--text-espresso);
+      border: 1px solid var(--border-taupe);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--terracotta);
+    }
+
+    .btn {
+      background-color: var(--terracotta);
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: var(--terracotta-hover);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--text-espresso);
+      border: 1px solid var(--border-taupe-dark);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--card-taupe);
+    }
+
+    .btn-small {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn-danger {
+      background-color: var(--red);
+      color: #fff;
+    }
+    .btn-danger:hover {
+      background-color: #991b1b;
+    }
+
+    /* Main Container & Sidebar */
+    .app-layout {
+      display: flex;
+      flex: 1;
+    }
+
+    sidebar {
+      width: 240px;
+      background-color: var(--card-taupe);
+      border-right: 1px solid var(--border-taupe);
+      padding: 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-item {
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: var(--text-espresso);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background-color 0.15s ease;
+    }
+
+    .nav-item:hover {
+      background-color: var(--card-taupe-hover);
+    }
+
+    .nav-item.active {
+      background-color: var(--terracotta);
+      color: #ffffff;
+    }
+
+    .badge-count {
+      background-color: var(--amber);
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .nav-item.active .badge-count {
+      background-color: #ffffff;
+      color: var(--terracotta);
+    }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Cards & Layout */
+    .card {
+      background-color: var(--card-taupe);
+      border: 1px solid var(--border-taupe);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-taupe);
+      padding-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-espresso);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-4 {
+        grid-template-columns: 1fr;
+      }
+      .app-layout {
+        flex-direction: column;
+      }
+      sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-taupe);
+      }
+    }
+
+    /* Stat Box */
+    .stat-box {
+      background-color: var(--bg-sand);
+      border: 1px solid var(--border-taupe);
+      border-radius: 6px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--terracotta);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Warning Banner */
+    .warning-banner {
+      background-color: var(--amber-bg);
+      border: 1px solid var(--amber);
+      color: #92400e;
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+
+    .warning-tag {
+      background-color: var(--amber);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+
+    .alert-banner {
+      background-color: var(--red-bg);
+      border: 1px solid var(--red);
+      color: var(--red);
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-taupe);
+    }
+
+    th {
+      background-color: var(--bg-sand);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    tr:hover td {
+      background-color: var(--card-taupe-hover);
+    }
+
+    /* Badges */
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-taken {
+      background-color: var(--green-bg);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .badge-pending {
+      background-color: var(--amber-bg);
+      color: var(--amber);
+      border: 1px solid var(--amber);
+    }
+
+    .badge-missed {
+      background-color: var(--red-bg);
+      color: var(--red);
+      border: 1px solid var(--red);
+    }
+
+    .badge-urgent {
+      background-color: var(--terracotta);
+      color: #fff;
+    }
+
+    /* Form controls */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      color: var(--text-muted);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border-taupe);
+      border-radius: 6px;
+      background-color: var(--bg-sand);
+      color: var(--text-espresso);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(44, 37, 34, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background-color: var(--bg-sand);
+      border: 1px solid var(--border-taupe-dark);
+      border-radius: 8px;
+      width: 100%;
+      max-width: 550px;
+      padding: 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-taupe);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* Canvas Graph */
+    .graph-container {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      background-color: var(--bg-sand);
+      border: 1px solid var(--border-taupe);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .tooltip {
+      position: absolute;
+      background-color: var(--text-espresso);
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      pointer-events: none;
+      display: none;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      line-height: 1.4;
+    }
+
+    /* Toggle switch */
+    .toggle-switch {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      gap: 10px;
+      font-weight: 600;
+    }
+
+    .toggle-input {
+      display: none;
+    }
+
+    .toggle-slider {
+      width: 40px;
+      height: 22px;
+      background-color: var(--border-taupe-dark);
+      border-radius: 20px;
+      position: relative;
+      transition: background-color 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+
+    .toggle-input:checked + .toggle-slider {
+      background-color: var(--terracotta);
+    }
+
+    .toggle-input:checked + .toggle-slider::before {
+      transform: translateX(18px);
+    }
+
+    /* View panels */
+    .view-panel {
+      display: none;
+    }
+
+    .view-panel.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">V</div>
+      <div class="brand-title">Vanguard Health</div>
+    </div>
+
+    <div class="header-actions">
+      <div class="sync-status">
+        <div class="sync-dot"></div>
+        <span id="syncStatusText">Synced - Just now</span>
+        <button class="btn btn-secondary btn-small" id="btnManualSync">Sync Now</button>
+      </div>
+
+      <div class="profile-switcher">
+        <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Profile:</span>
+        <select id="profileSelect"></select>
+        <button class="btn btn-secondary btn-small" id="btnAddProfileModal">+ New Profile</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <sidebar>
+      <div class="nav-item active" data-view="dashboard">
+        <span>Dashboard & Schedule</span>
+        <span class="badge-count" id="dueCountBadge">0</span>
+      </div>
+      <div class="nav-item" data-view="medications">
+        <span>Medications & Stockpile</span>
+        <span class="badge-count" id="stockAlertBadge" style="display:none; background-color: var(--red);">0</span>
+      </div>
+      <div class="nav-item" data-view="adherence">
+        <span>Adherence Analytics</span>
+      </div>
+      <div class="nav-item" data-view="vitals">
+        <span>Vitals Logger & Trends</span>
+      </div>
+      <div class="nav-item" data-view="ringtones">
+        <span>Ringtone & Alerts</span>
+      </div>
+      <div class="nav-item" data-view="settings">
+        <span>Settings & Backup</span>
+      </div>
+    </sidebar>
+
+    <!-- Main View Content -->
+    <main>
+
+      <!-- VIEW 1: DASHBOARD & SCHEDULE -->
+      <div id="view-dashboard" class="view-panel active">
+        <!-- Exhaustion Warning Banner -->
+        <div id="exhaustionWarningContainer"></div>
+
+        <!-- Quick Stats -->
+        <div class="grid-4" style="margin-bottom: 20px;">
+          <div class="stat-box">
+            <div class="stat-value" id="statActiveMeds">0</div>
+            <div class="stat-label">Active Medications</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statDueToday">0</div>
+            <div class="stat-label">Doses Due Today</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statAdherence7Day">100%</div>
+            <div class="stat-label">7-Day Adherence</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statLowStockCount">0</div>
+            <div class="stat-label">Stock Warnings</div>
+          </div>
+        </div>
+
+        <!-- Simulation & Today Schedule -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Today's Medication Schedule</div>
+            <div>
+              <button class="btn btn-secondary btn-small" id="btnSimulateReminder">Simulate Due Reminder</button>
+            </div>
+          </div>
+
+          <div id="scheduleContainer">
+            <!-- Dynamic Schedule Table -->
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: MEDICATIONS & STOCKPILE -->
+      <div id="view-medications" class="view-panel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Medication Inventory & Stockpile Records</div>
+            <button class="btn" id="btnOpenAddMedModal">+ Add Medication</button>
+          </div>
+
+          <div id="medicationsContainer">
+            <!-- Dynamic Medication List -->
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: ADHERENCE ANALYTICS -->
+      <div id="view-adherence" class="view-panel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Adherence Analytics Engine</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-small" id="btnFilter7Days">Rolling 7 Days</button>
+              <button class="btn btn-secondary btn-small" id="btnFilter30Days">Rolling 30 Days</button>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom: 20px;">
+            <div class="stat-box">
+              <div class="stat-value" id="analyticsTakenRatio">0 / 0</div>
+              <div class="stat-label">Doses Taken vs. Scheduled</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="analyticsPercentage">0%</div>
+              <div class="stat-label">Adherence Rate</div>
+            </div>
+          </div>
+
+          <div class="graph-container">
+            <canvas id="adherenceCanvas"></canvas>
+            <div id="graphTooltip" class="tooltip"></div>
+          </div>
+        </div>
+
+        <!-- Adherence History Log -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Dose Execution History</div>
+          </div>
+          <div id="doseHistoryContainer"></div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: VITALS LOGGER & 30-DAY TREND CANVAS -->
+      <div id="view-vitals" class="view-panel">
+
+        <!-- 30-Day Interactive Vitals Trend Lines Canvas Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Interactive 30-Day Vitals Trend Lines</div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-small" id="btnVitalChartBP">Blood Pressure (SYS/DIA)</button>
+              <button class="btn btn-secondary btn-small" id="btnVitalChartHR">Heart Rate (BPM)</button>
+              <button class="btn btn-secondary btn-small" id="btnVitalChartGlucose">Glucose (mg/dL)</button>
+              <button class="btn btn-secondary btn-small" id="btnVitalChartWeight">Weight (lbs)</button>
+            </div>
+          </div>
+
+          <div class="graph-container" style="height: 300px; position: relative;">
+            <canvas id="vitalsTrendCanvas"></canvas>
+            <div id="vitalsChartTooltip" class="tooltip"></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+            <div id="vitalsChartLegend">
+              <strong>Legend:</strong>
+              <span style="color: var(--terracotta); font-weight: 700; margin-left: 8px;">-- Systolic BP</span>
+              <span style="color: var(--amber); font-weight: 700; margin-left: 12px;">-- Diastolic BP</span>
+            </div>
+            <div>Hover or tap data point nodes to inspect exact 30-day vitals readings</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Log Vitals Form -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Log Daily Vitals</div>
+            </div>
+            <form id="vitalsForm">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Systolic BP (mmHg)</label>
+                  <input type="number" class="form-control" id="vitalSys" placeholder="120" required>
+                </div>
+                <div class="form-group">
+                  <label>Diastolic BP (mmHg)</label>
+                  <input type="number" class="form-control" id="vitalDia" placeholder="80" required>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Blood Glucose (mg/dL)</label>
+                  <input type="number" class="form-control" id="vitalGlucose" placeholder="95">
+                </div>
+                <div class="form-group">
+                  <label>Heart Rate (BPM)</label>
+                  <input type="number" class="form-control" id="vitalHeartRate" placeholder="72">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Body Temp (°F)</label>
+                  <input type="number" step="0.1" class="form-control" id="vitalTemp" placeholder="98.6">
+                </div>
+                <div class="form-group">
+                  <label>Weight (lbs)</label>
+                  <input type="number" step="0.1" class="form-control" id="vitalWeight" placeholder="165.0">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Notes / Observations</label>
+                <input type="text" class="form-control" id="vitalNotes" placeholder="Morning fasting reading">
+              </div>
+
+              <button type="submit" class="btn" style="width: 100%;">Save Vitals Entry</button>
+            </form>
+          </div>
+
+          <!-- Latest Vitals Trends Summary -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Latest Vitals Summary</div>
+            </div>
+            <div class="grid-2" style="gap: 12px;">
+              <div class="stat-box">
+                <div class="stat-value" id="summaryBP">-- / --</div>
+                <div class="stat-label">Blood Pressure</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-value" id="summaryGlucose">--</div>
+                <div class="stat-label">Glucose (mg/dL)</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-value" id="summaryHR">--</div>
+                <div class="stat-label">Heart Rate (BPM)</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-value" id="summaryWeight">--</div>
+                <div class="stat-label">Weight (lbs)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vitals History Table -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Chronological Vitals Log History</div>
+          </div>
+          <div id="vitalsHistoryContainer"></div>
+        </div>
+      </div>
+
+      <!-- VIEW 5: RINGTONES & ALERTS -->
+      <div id="view-ringtones" class="view-panel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Synthesized Web Audio Custom Ringtone Manager</div>
+          </div>
+          <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+            Assign distinct synthesized audio tones and volume profiles to medication urgency levels. Audio is synthesized live via the Web Audio API without external file dependencies.
+          </p>
+
+          <div class="grid-2">
+            <div>
+              <div class="form-group">
+                <label>Urgency Level Selection</label>
+                <select id="ringtoneUrgencySelect" class="form-control">
+                  <option value="LOW">Low Urgency (Routine Supplements)</option>
+                  <option value="MEDIUM" selected>Medium Urgency (Standard Maintenance)</option>
+                  <option value="HIGH">High Urgency (Time-Critical Medications)</option>
+                  <option value="CRITICAL">Critical Urgency (Emergency / Rescue Doses)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Synthesized Tone Profile</label>
+                <select id="ringtoneProfileSelect" class="form-control">
+                  <option value="Gentle Chime">Gentle Chime (Soft Dual Sine)</option>
+                  <option value="Urgent Pulse">Urgent Pulse (Pulsing Square Alarm)</option>
+                  <option value="Calm Melody">Calm Melody (Triad Arpeggio)</option>
+                  <option value="Earthy Beep">Earthy Beep (Warm Low Frequency)</option>
+                  <option value="Triple Alert">Triple Alert (Staccato Warning)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Alert Volume</label>
+                <input type="range" id="ringtoneVolume" min="0" max="1" step="0.05" value="0.8" style="width: 100%;">
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <button class="btn" id="btnTestAudioTone">Test Sound Profile</button>
+                <button class="btn btn-secondary" id="btnSaveAudioMapping">Save Ringtone Mapping</button>
+              </div>
+            </div>
+
+            <div style="background-color: var(--bg-sand); padding: 16px; border-radius: 6px; border: 1px solid var(--border-taupe);">
+              <div style="font-weight: 700; text-transform: uppercase; font-size: 12px; margin-bottom: 10px; color: var(--text-muted);">Configured Tone Mapping</div>
+              <div id="ringtoneMappingList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 6: SETTINGS & BACKUP -->
+      <div id="view-settings" class="view-panel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Display & Application Preferences</div>
+          </div>
+
+          <div class="form-group">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleHighContrast" class="toggle-input">
+              <span class="toggle-slider"></span>
+              <span>High Contrast Mode (Enhanced Accessibility)</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleCompactView" class="toggle-input">
+              <span class="toggle-slider"></span>
+              <span>Compact UI Layout Mode</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Data Management & Backup Suite</div>
+          </div>
+
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+            <button class="btn" id="btnExportJSON">Export Profile Backup (JSON)</button>
+            <label class="btn btn-secondary" style="cursor: pointer;">
+              Import Backup (JSON)
+              <input type="file" id="importFileInput" accept=".json" style="display: none;">
+            </label>
+          </div>
+
+          <div style="border-top: 1px solid var(--border-taupe); padding-top: 16px; display: flex; gap: 12px;">
+            <button class="btn btn-danger btn-small" id="btnResetCurrentProfile">Reset Current Profile Data</button>
+            <button class="btn btn-danger btn-small" id="btnResetAllData">Reset Entire Application State</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAL: ADD / EDIT MEDICATION -->
+  <div id="medicationModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="medModalTitle">Add New Medication</div>
+        <button class="btn btn-secondary btn-small" id="btnCloseMedModal">X</button>
+      </div>
+
+      <form id="medicationForm">
+        <input type="hidden" id="medId">
+
+        <div class="form-group">
+          <label>Brand / Generic Medicine Name</label>
+          <input type="text" class="form-control" id="medName" placeholder="e.g. Amoxicillin" required>
+        </div>
+
+        <div class="form-group">
+          <label>Active Ingredients</label>
+          <input type="text" class="form-control" id="medActiveIngredients" placeholder="e.g. Amoxicillin trihydrate 500mg">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Dosage Form</label>
+            <select class="form-control" id="medDosageForm">
+              <option value="Tablet / Capsule">Tablet / Capsule</option>
+              <option value="Liquid / Syrup">Liquid / Syrup</option>
+              <option value="Injection">Injection</option>
+              <option value="Topical Ointment">Topical Ointment</option>
+              <option value="Inhaler / Drops">Inhaler / Drops</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Urgency Level</label>
+            <select class="form-control" id="medUrgency">
+              <option value="LOW">Low Urgency</option>
+              <option value="MEDIUM" selected>Medium Urgency</option>
+              <option value="HIGH">High Urgency</option>
+              <option value="CRITICAL">Critical Urgency</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Schedule Pattern</label>
+            <select class="form-control" id="medSchedulePattern">
+              <option value="DAILY">Daily (Fixed Hours)</option>
+              <option value="ALTERNATE">Alternate Days</option>
+              <option value="RESCUE">Rescue / As Needed</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Dose Times (Comma Separated)</label>
+            <input type="text" class="form-control" id="medDoseTimes" placeholder="08:00, 20:00" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Current Stock Count</label>
+            <input type="number" class="form-control" id="medStockCount" placeholder="30" required>
+          </div>
+
+          <div class="form-group">
+            <label>Daily Consumption Rate</label>
+            <input type="number" class="form-control" id="medDailyRate" value="1" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Prescribing Doctor</label>
+          <input type="text" class="form-control" id="medDoctor" placeholder="Dr. Sarah Jenkins">
+        </div>
+
+        <div class="form-group">
+          <label>Pharmacy Instructions & Notes</label>
+          <textarea class="form-control" id="medInstructions" rows="2" placeholder="Take with full glass of water after food"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Side Effects & Log Notes</label>
+          <input type="text" class="form-control" id="medSideEffects" placeholder="Mild nausea if taken without food">
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px;">
+          <button type="button" class="btn btn-secondary" id="btnCancelMedModal">Cancel</button>
+          <button type="submit" class="btn">Save Medication Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD PROFILE -->
+  <div id="profileModal" class="modal-overlay">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <div class="modal-title">Create New Profile</div>
+        <button class="btn btn-secondary btn-small" id="btnCloseProfileModal">X</button>
+      </div>
+      <form id="profileForm">
+        <div class="form-group">
+          <label>Profile Name</label>
+          <input type="text" class="form-control" id="newProfileName" placeholder="e.g. Eleanor (Elder), Thomas" required>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px;">
+          <button type="button" class="btn btn-secondary" id="btnCancelProfileModal">Cancel</button>
+          <button type="submit" class="btn">Create Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    (function() {
+      // Helper: Generate 30 continuous days of seed vitals
+      function generateInitial30DayVitals() {
+        const logs = [];
+        const now = Date.now();
+        for (let i = 29; i >= 0; i--) {
+          const ts = now - (i * 86400000);
+          const sys = Math.round(118 + (Math.sin(i * 0.4) * 6) + (Math.random() * 4 - 2));
+          const dia = Math.round(76 + (Math.cos(i * 0.4) * 4) + (Math.random() * 3 - 1.5));
+          const hr = Math.round(70 + (Math.sin(i * 0.3) * 5) + (Math.random() * 4 - 2));
+          const glucose = Math.round(92 + (Math.cos(i * 0.5) * 8) + (Math.random() * 6 - 3));
+          const temp = parseFloat((98.4 + (Math.sin(i * 0.2) * 0.3) + (Math.random() * 0.2 - 0.1)).toFixed(1));
+          const weight = parseFloat((165.2 - (i * 0.08) + (Math.random() * 0.4 - 0.2)).toFixed(1));
+
+          logs.push({
+            id: "v_seed_" + i,
+            sys,
+            dia,
+            glucose,
+            hr,
+            temp,
+            weight,
+            notes: i === 0 ? "Today's morning baseline" : (i % 5 === 0 ? "Routine vitals check" : ""),
+            timestamp: ts
+          });
+        }
+        return logs;
+      }
+
+      // APP STATE DATA STRUCTURE
+      const DEFAULT_STATE = {
+        profiles: ["Self", "Family Dependent"],
+        currentProfile: "Self",
+        settings: {
+          highContrast: false,
+          compactView: false,
+          volume: 0.8,
+          ringtoneMappings: {
+            "LOW": "Gentle Chime",
+            "MEDIUM": "Urgent Pulse",
+            "HIGH": "Calm Melody",
+            "CRITICAL": "Triple Alert"
+          }
+        },
+        medications: {
+          "Self": [
+            {
+              id: "med_1",
+              name: "Amoxicillin",
+              activeIngredients: "Amoxicillin trihydrate 500mg",
+              dosageForm: "Tablet / Capsule",
+              urgency: "HIGH",
+              schedulePattern: "DAILY",
+              doseTimes: ["08:00", "20:00"],
+              stockCount: 14,
+              dailyRate: 2,
+              doctor: "Dr. Sarah Jenkins",
+              instructions: "Take with full glass of water after food",
+              sideEffects: "Mild drowsiness"
+            },
+            {
+              id: "med_2",
+              name: "Atorvastatin",
+              activeIngredients: "Atorvastatin calcium 20mg",
+              dosageForm: "Tablet / Capsule",
+              urgency: "MEDIUM",
+              schedulePattern: "DAILY",
+              doseTimes: ["21:00"],
+              stockCount: 5,
+              dailyRate: 1,
+              doctor: "Dr. Michael Ross",
+              instructions: "Take before bedtime",
+              sideEffects: "None reported"
+            }
+          ]
+        },
+        doseLogs: {
+          "Self": [
+            { id: "log_1", medId: "med_1", medName: "Amoxicillin", time: "08:00", status: "TAKEN", timestamp: Date.now() - 86400000 },
+            { id: "log_2", medId: "med_1", medName: "Amoxicillin", time: "20:00", status: "TAKEN", timestamp: Date.now() - 86400000 },
+            { id: "log_3", medId: "med_2", medName: "Atorvastatin", time: "21:00", status: "TAKEN", timestamp: Date.now() - 86400000 }
+          ]
+        },
+        vitalsLogs: {
+          "Self": generateInitial30DayVitals()
+        }
+      };
+
+      let appState = JSON.parse(localStorage.getItem("VANGUARD_HEALTH_DATA")) || DEFAULT_STATE;
+
+      // Ensure seed vitals if empty
+      if (!appState.vitalsLogs["Self"] || appState.vitalsLogs["Self"].length === 0) {
+        appState.vitalsLogs["Self"] = generateInitial30DayVitals();
+      }
+
+      function saveState() {
+        localStorage.setItem("VANGUARD_HEALTH_DATA", JSON.stringify(appState));
+        document.getElementById("syncStatusText").textContent = "Synced - Just now";
+      }
+
+      // WEB AUDIO SYNTHESIZER
+      let audioCtx = null;
+      function getAudioContext() {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        return audioCtx;
+      }
+
+      function playTone(profileName, volume = 0.8) {
+        try {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          const masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(volume, now);
+          masterGain.connect(ctx.destination);
+
+          if (profileName === "Gentle Chime") {
+            [523.25, 659.25].forEach((freq, i) => {
+              const osc = ctx.createOscillator();
+              const g = ctx.createGain();
+              osc.type = "sine";
+              osc.frequency.setValueAtTime(freq, now + i * 0.1);
+              g.gain.setValueAtTime(0.3, now + i * 0.1);
+              g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.8);
+              osc.connect(g);
+              g.connect(masterGain);
+              osc.start(now + i * 0.1);
+              osc.stop(now + i * 0.1 + 0.8);
+            });
+          } else if (profileName === "Urgent Pulse") {
+            for (let i = 0; i < 3; i++) {
+              const osc = ctx.createOscillator();
+              const g = ctx.createGain();
+              osc.type = "square";
+              osc.frequency.setValueAtTime(880, now + i * 0.2);
+              g.gain.setValueAtTime(0.2, now + i * 0.2);
+              g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.2 + 0.12);
+              osc.connect(g);
+              g.connect(masterGain);
+              osc.start(now + i * 0.2);
+              osc.stop(now + i * 0.2 + 0.12);
+            }
+          } else if (profileName === "Calm Melody") {
+            [440, 554.37, 659.25].forEach((freq, i) => {
+              const osc = ctx.createOscillator();
+              const g = ctx.createGain();
+              osc.type = "sine";
+              osc.frequency.setValueAtTime(freq, now + i * 0.15);
+              g.gain.setValueAtTime(0.3, now + i * 0.15);
+              g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.6);
+              osc.connect(g);
+              g.connect(masterGain);
+              osc.start(now + i * 0.15);
+              osc.stop(now + i * 0.15 + 0.6);
+            });
+          } else if (profileName === "Earthy Beep") {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(329.63, now);
+            g.gain.setValueAtTime(0.5, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.connect(g);
+            g.connect(masterGain);
+            osc.start(now);
+            osc.stop(now + 0.5);
+          } else if (profileName === "Triple Alert") {
+            [783.99, 783.99, 1046.50].forEach((freq, i) => {
+              const osc = ctx.createOscillator();
+              const g = ctx.createGain();
+              osc.type = "sawtooth";
+              osc.frequency.setValueAtTime(freq, now + i * 0.15);
+              g.gain.setValueAtTime(0.25, now + i * 0.15);
+              g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.12);
+              osc.connect(g);
+              g.connect(masterGain);
+              osc.start(now + i * 0.15);
+              osc.stop(now + i * 0.15 + 0.12);
+            });
+          }
+        } catch (e) {
+          console.warn("Audio playback exception:", e);
+        }
+      }
+
+      // UI RENDERERS
+      function renderProfiles() {
+        const select = document.getElementById("profileSelect");
+        select.innerHTML = "";
+        appState.profiles.forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p;
+          opt.textContent = p;
+          if (p === appState.currentProfile) opt.selected = true;
+          select.appendChild(opt);
+        });
+      }
+
+      function getCurrentMeds() {
+        if (!appState.medications[appState.currentProfile]) {
+          appState.medications[appState.currentProfile] = [];
+        }
+        return appState.medications[appState.currentProfile];
+      }
+
+      function getCurrentLogs() {
+        if (!appState.doseLogs[appState.currentProfile]) {
+          appState.doseLogs[appState.currentProfile] = [];
+        }
+        return appState.doseLogs[appState.currentProfile];
+      }
+
+      function getCurrentVitals() {
+        if (!appState.vitalsLogs[appState.currentProfile] || appState.vitalsLogs[appState.currentProfile].length === 0) {
+          appState.vitalsLogs[appState.currentProfile] = generateInitial30DayVitals();
+        }
+        return appState.vitalsLogs[appState.currentProfile];
+      }
+
+      function renderDashboard() {
+        const meds = getCurrentMeds();
+        const logs = getCurrentLogs();
+
+        // 1. Exhaustion Warnings
+        const warningContainer = document.getElementById("exhaustionWarningContainer");
+        warningContainer.innerHTML = "";
+
+        let lowStockCount = 0;
+        meds.forEach(med => {
+          const daysLeft = Math.floor(med.stockCount / (med.dailyRate || 1));
+          if (daysLeft < 7) {
+            lowStockCount++;
+            const banner = document.createElement("div");
+            banner.className = daysLeft <= 2 ? "alert-banner" : "warning-banner";
+            banner.innerHTML = `
+              <div>
+                <span class="warning-tag">${daysLeft <= 2 ? "CRITICAL" : "LOW STOCK"}</span>
+                <strong>${med.name}</strong> (${med.stockCount} remaining) - Approximately ${daysLeft} days until exhaustion.
+              </div>
+              <button class="btn btn-small" onclick="refillMedication('${med.id}')">+ Refill Stock</button>
+            `;
+            warningContainer.appendChild(banner);
+          }
+        });
+
+        // Stats
+        document.getElementById("statActiveMeds").textContent = meds.length;
+        document.getElementById("statDueToday").textContent = meds.reduce((acc, m) => acc + (m.doseTimes ? m.doseTimes.length : 0), 0);
+        document.getElementById("statLowStockCount").textContent = lowStockCount;
+
+        document.getElementById("dueCountBadge").textContent = meds.reduce((acc, m) => acc + (m.doseTimes ? m.doseTimes.length : 0), 0);
+        const badge = document.getElementById("stockAlertBadge");
+        if (lowStockCount > 0) {
+          badge.style.display = "inline-block";
+          badge.textContent = lowStockCount;
+        } else {
+          badge.style.display = "none";
+        }
+
+        // 7-day adherence stat
+        const sevenDaysAgo = Date.now() - (7 * 86400000);
+        const recentLogs = logs.filter(l => l.timestamp >= sevenDaysAgo);
+        const taken = recentLogs.filter(l => l.status === "TAKEN").length;
+        const total = recentLogs.length;
+        const adh7 = total > 0 ? Math.round((taken / total) * 100) : 100;
+        document.getElementById("statAdherence7Day").textContent = adh7 + "%";
+
+        // Today Schedule Table
+        const schedContainer = document.getElementById("scheduleContainer");
+        if (meds.length === 0) {
+          schedContainer.innerHTML = `<p style="color: var(--text-muted); padding: 12px;">No medications recorded for ${appState.currentProfile}. Click "Medications & Stockpile" to add one.</p>`;
+          return;
+        }
+
+        let html = `<table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Medication Name</th>
+              <th>Dosage Form</th>
+              <th>Urgency</th>
+              <th>Instructions</th>
+              <th>Status / Action</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        const todayLogs = logs.filter(l => new Date(l.timestamp).toDateString() === new Date().toDateString());
+
+        meds.forEach(med => {
+          (med.doseTimes || ["08:00"]).forEach(time => {
+            const logged = todayLogs.find(l => l.medId === med.id && l.time === time);
+            const status = logged ? logged.status : "PENDING";
+
+            let badgeClass = "badge-pending";
+            if (status === "TAKEN") badgeClass = "badge-taken";
+            if (status === "SKIPPED") badgeClass = "badge-missed";
+
+            html += `<tr>
+              <td><strong>${time}</strong></td>
+              <td><strong>${med.name}</strong><br><span style="font-size: 11px; color: var(--text-muted);">${med.activeIngredients || ""}</span></td>
+              <td>${med.dosageForm}</td>
+              <td><span class="status-badge badge-urgent">${med.urgency || "MEDIUM"}</span></td>
+              <td style="font-size: 12px;">${med.instructions || "Take as directed"}</td>
+              <td>
+                ${status === "PENDING" ? `
+                  <button class="btn btn-small" onclick="logDose('${med.id}', '${med.name}', '${time}', 'TAKEN')">Mark Taken</button>
+                  <button class="btn btn-secondary btn-small" onclick="logDose('${med.id}', '${med.name}', '${time}', 'SKIPPED')">Skip</button>
+                ` : `<span class="status-badge ${badgeClass}">${status}</span>`}
+              </td>
+            </tr>`;
+          });
+        });
+
+        html += `</tbody></table>`;
+        schedContainer.innerHTML = html;
+      }
+
+      function renderMedications() {
+        const meds = getCurrentMeds();
+        const container = document.getElementById("medicationsContainer");
+
+        if (meds.length === 0) {
+          container.innerHTML = `<p style="color: var(--text-muted); padding: 12px;">No medication records found. Click "+ Add Medication" to create your first record.</p>`;
+          return;
+        }
+
+        let html = `<table>
+          <thead>
+            <tr>
+              <th>Medicine Record</th>
+              <th>Active Ingredient</th>
+              <th>Schedule</th>
+              <th>Stock Remaining</th>
+              <th>Days Left</th>
+              <th>Doctor / Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        meds.forEach(med => {
+          const daysLeft = Math.floor(med.stockCount / (med.dailyRate || 1));
+          let stockClass = daysLeft <= 2 ? "color: var(--red); font-weight: 800;" : (daysLeft < 7 ? "color: var(--amber); font-weight: 700;" : "");
+
+          html += `<tr>
+            <td>
+              <strong>${med.name}</strong><br>
+              <span class="status-badge badge-urgent" style="font-size: 10px;">${med.dosageForm}</span>
+            </td>
+            <td style="font-size: 12px;">${med.activeIngredients || "--"}</td>
+            <td>${med.schedulePattern} (${(med.doseTimes || []).join(", ")})</td>
+            <td><strong>${med.stockCount} units</strong></td>
+            <td style="${stockClass}">${daysLeft} Days Remaining</td>
+            <td style="font-size: 12px;">${med.doctor ? "Dr. " + med.doctor : "--"}<br><em>${med.sideEffects || ""}</em></td>
+            <td>
+              <button class="btn btn-small btn-secondary" onclick="refillMedication('${med.id}')">+ Refill</button>
+              <button class="btn btn-small btn-danger" onclick="deleteMedication('${med.id}')">Delete</button>
+            </td>
+          </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      }
+
+      function renderAdherenceGraph(days = 7) {
+        const logs = getCurrentLogs();
+        const canvas = document.getElementById("adherenceCanvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = canvas.parentElement.clientWidth - 20;
+        canvas.height = canvas.parentElement.clientHeight - 20;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const dataPoints = [];
+        const now = new Date();
+
+        for (let i = days - 1; i >= 0; i--) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          const dateStr = d.toDateString();
+
+          const dayLogs = logs.filter(l => new Date(l.timestamp).toDateString() === dateStr);
+          const taken = dayLogs.filter(l => l.status === "TAKEN").length;
+          const total = dayLogs.length;
+          const rate = total > 0 ? (taken / total) * 100 : 100;
+
+          dataPoints.push({
+            label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+            rate: Math.round(rate),
+            taken,
+            total
+          });
+        }
+
+        const padding = 40;
+        const w = canvas.width - padding * 2;
+        const h = canvas.height - padding * 2;
+
+        ctx.strokeStyle = "#dcd2c4";
+        ctx.lineWidth = 1;
+
+        for (let p = 0; p <= 100; p += 25) {
+          const y = canvas.height - padding - (p / 100) * h;
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(canvas.width - padding, y);
+          ctx.stroke();
+
+          ctx.fillStyle = "#6b5d56";
+          ctx.font = "10px sans-serif";
+          ctx.fillText(p + "%", 10, y + 3);
+        }
+
+        if (dataPoints.length > 0) {
+          const stepX = w / (dataPoints.length - 1 || 1);
+
+          ctx.beginPath();
+          ctx.strokeStyle = "#b87355";
+          ctx.lineWidth = 3;
+
+          dataPoints.forEach((pt, i) => {
+            const x = padding + i * stepX;
+            const y = canvas.height - padding - (pt.rate / 100) * h;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          dataPoints.forEach((pt, i) => {
+            const x = padding + i * stepX;
+            const y = canvas.height - padding - (pt.rate / 100) * h;
+
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = "#b87355";
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = "#6b5d56";
+            ctx.font = "10px sans-serif";
+            ctx.fillText(pt.label, x - 12, canvas.height - padding + 15);
+          });
+        }
+
+        const totalTaken = dataPoints.reduce((acc, p) => acc + p.taken, 0);
+        const totalScheduled = dataPoints.reduce((acc, p) => acc + p.total, 0);
+        document.getElementById("analyticsTakenRatio").textContent = `${totalTaken} / ${totalScheduled}`;
+        const overallRate = totalScheduled > 0 ? Math.round((totalTaken / totalScheduled) * 100) : 100;
+        document.getElementById("analyticsPercentage").textContent = `${overallRate}%`;
+
+        const historyContainer = document.getElementById("doseHistoryContainer");
+        if (logs.length === 0) {
+          historyContainer.innerHTML = `<p style="color: var(--text-muted); padding: 12px;">No dose execution logs recorded yet.</p>`;
+          return;
+        }
+
+        let html = `<table><thead><tr><th>Timestamp</th><th>Medication</th><th>Time</th><th>Status</th></tr></thead><tbody>`;
+        logs.slice().reverse().forEach(log => {
+          const date = new Date(log.timestamp).toLocaleString();
+          html += `<tr>
+            <td>${date}</td>
+            <td><strong>${log.medName}</strong></td>
+            <td>${log.time}</td>
+            <td><span class="status-badge ${log.status === "TAKEN" ? "badge-taken" : "badge-missed"}">${log.status}</span></td>
+          </tr>`;
+        });
+        html += `</tbody></table>`;
+        historyContainer.innerHTML = html;
+      }
+
+      // CANVAS API: INTERACTIVE 30-DAY VITALS TREND CHART ENGINE
+      let currentVitalMetric = 'BP';
+      let vitalsChartNodes = [];
+
+      function renderVitalsTrendChart(metricMode = 'BP') {
+        currentVitalMetric = metricMode;
+        const canvas = document.getElementById("vitalsTrendCanvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = canvas.parentElement.clientWidth - 20;
+        canvas.height = canvas.parentElement.clientHeight - 20;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const allVitals = getCurrentVitals();
+        const thirtyDaysAgo = Date.now() - (30 * 86400000);
+        const recent30Vitals = allVitals
+          .filter(v => v.timestamp >= thirtyDaysAgo)
+          .sort((a, b) => a.timestamp - b.timestamp);
+
+        vitalsChartNodes = [];
+
+        if (recent30Vitals.length === 0) {
+          ctx.fillStyle = "#6b5d56";
+          ctx.font = "13px sans-serif";
+          ctx.fillText("No vitals readings recorded in the last 30 days.", canvas.width / 2 - 120, canvas.height / 2);
+          return;
+        }
+
+        const padding = 45;
+        const w = canvas.width - padding * 2;
+        const h = canvas.height - padding * 2;
+
+        // Determine min and max Y bounds
+        let minY = 50;
+        let maxY = 160;
+
+        if (metricMode === 'BP') {
+          minY = 50;
+          maxY = 170;
+        } else if (metricMode === 'HR') {
+          minY = 40;
+          maxY = 120;
+        } else if (metricMode === 'GLUCOSE') {
+          minY = 60;
+          maxY = 180;
+        } else if (metricMode === 'WEIGHT') {
+          const weights = recent30Vitals.map(v => v.weight).filter(Boolean);
+          const minW = Math.min(...weights, 140);
+          const maxW = Math.max(...weights, 180);
+          minY = Math.floor(minW - 5);
+          maxY = Math.ceil(maxW + 5);
+        }
+
+        // Draw Grid Lines & Y-Axis Labels
+        ctx.strokeStyle = "#dcd2c4";
+        ctx.lineWidth = 1;
+
+        const gridSteps = 5;
+        for (let i = 0; i <= gridSteps; i++) {
+          const val = Math.round(minY + (i / gridSteps) * (maxY - minY));
+          const y = canvas.height - padding - (i / gridSteps) * h;
+
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(canvas.width - padding, y);
+          ctx.stroke();
+
+          ctx.fillStyle = "#6b5d56";
+          ctx.font = "10px sans-serif";
+          ctx.fillText(val.toString(), 8, y + 3);
+        }
+
+        const stepX = w / (recent30Vitals.length - 1 || 1);
+
+        // Function to convert value to canvas Y coordinate
+        function getCanvasY(val) {
+          const clamped = Math.max(minY, Math.min(maxY, val));
+          return canvas.height - padding - ((clamped - minY) / (maxY - minY)) * h;
+        }
+
+        if (metricMode === 'BP') {
+          // Update Legend Text
+          document.getElementById("vitalsChartLegend").innerHTML = `
+            <strong>Legend:</strong>
+            <span style="color: var(--terracotta); font-weight: 700; margin-left: 8px;">-- Systolic BP (mmHg)</span>
+            <span style="color: var(--amber); font-weight: 700; margin-left: 12px;">-- Diastolic BP (mmHg)</span>
+          `;
+
+          // Draw Systolic Area Fill
+          ctx.beginPath();
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.sys);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.lineTo(padding + (recent30Vitals.length - 1) * stepX, canvas.height - padding);
+          ctx.lineTo(padding, canvas.height - padding);
+          ctx.closePath();
+          ctx.fillStyle = "rgba(184, 115, 85, 0.08)";
+          ctx.fill();
+
+          // Draw Systolic Trend Line
+          ctx.beginPath();
+          ctx.strokeStyle = "#b87355";
+          ctx.lineWidth = 2.5;
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.sys);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          // Draw Diastolic Trend Line
+          ctx.beginPath();
+          ctx.strokeStyle = "#d97706";
+          ctx.lineWidth = 2.5;
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.dia);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          // Draw Nodes
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const ySys = getCanvasY(v.sys);
+            const yDia = getCanvasY(v.dia);
+
+            // Systolic node
+            ctx.beginPath();
+            ctx.arc(x, ySys, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = "#b87355";
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Diastolic node
+            ctx.beginPath();
+            ctx.arc(x, yDia, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+            ctx.strokeStyle = "#d97706";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            vitalsChartNodes.push({ x, y: ySys, data: v, metric: 'BP_SYS' });
+            vitalsChartNodes.push({ x, y: yDia, data: v, metric: 'BP_DIA' });
+
+            // Date X-axis labels (every 5th reading or start/end)
+            if (i % 5 === 0 || i === recent30Vitals.length - 1) {
+              const dStr = new Date(v.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+              ctx.fillStyle = "#6b5d56";
+              ctx.font = "10px sans-serif";
+              ctx.fillText(dStr, x - 12, canvas.height - padding + 15);
+            }
+          });
+
+        } else if (metricMode === 'HR') {
+          document.getElementById("vitalsChartLegend").innerHTML = `
+            <strong>Legend:</strong>
+            <span style="color: var(--green); font-weight: 700; margin-left: 8px;">-- Heart Rate (BPM)</span>
+          `;
+
+          ctx.beginPath();
+          ctx.strokeStyle = "#4d7c0f";
+          ctx.lineWidth = 2.5;
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.hr || 70);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.hr || 70);
+
+            ctx.beginPath();
+            ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = "#4d7c0f";
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            vitalsChartNodes.push({ x, y, data: v, metric: 'HR' });
+
+            if (i % 5 === 0 || i === recent30Vitals.length - 1) {
+              const dStr = new Date(v.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+              ctx.fillStyle = "#6b5d56";
+              ctx.font = "10px sans-serif";
+              ctx.fillText(dStr, x - 12, canvas.height - padding + 15);
+            }
+          });
+
+        } else if (metricMode === 'GLUCOSE') {
+          document.getElementById("vitalsChartLegend").innerHTML = `
+            <strong>Legend:</strong>
+            <span style="color: var(--terracotta); font-weight: 700; margin-left: 8px;">-- Blood Glucose (mg/dL)</span>
+          `;
+
+          ctx.beginPath();
+          ctx.strokeStyle = "#b87355";
+          ctx.lineWidth = 2.5;
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.glucose || 90);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.glucose || 90);
+
+            ctx.beginPath();
+            ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = "#b87355";
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            vitalsChartNodes.push({ x, y, data: v, metric: 'GLUCOSE' });
+
+            if (i % 5 === 0 || i === recent30Vitals.length - 1) {
+              const dStr = new Date(v.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+              ctx.fillStyle = "#6b5d56";
+              ctx.font = "10px sans-serif";
+              ctx.fillText(dStr, x - 12, canvas.height - padding + 15);
+            }
+          });
+
+        } else if (metricMode === 'WEIGHT') {
+          document.getElementById("vitalsChartLegend").innerHTML = `
+            <strong>Legend:</strong>
+            <span style="color: var(--text-espresso); font-weight: 700; margin-left: 8px;">-- Weight (lbs)</span>
+          `;
+
+          ctx.beginPath();
+          ctx.strokeStyle = "#2c2522";
+          ctx.lineWidth = 2.5;
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.weight || 165);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          recent30Vitals.forEach((v, i) => {
+            const x = padding + i * stepX;
+            const y = getCanvasY(v.weight || 165);
+
+            ctx.beginPath();
+            ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = "#2c2522";
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            vitalsChartNodes.push({ x, y, data: v, metric: 'WEIGHT' });
+
+            if (i % 5 === 0 || i === recent30Vitals.length - 1) {
+              const dStr = new Date(v.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+              ctx.fillStyle = "#6b5d56";
+              ctx.font = "10px sans-serif";
+              ctx.fillText(dStr, x - 12, canvas.height - padding + 15);
+            }
+          });
+        }
+      }
+
+      function setupVitalsCanvasInteractivity() {
+        const canvas = document.getElementById("vitalsTrendCanvas");
+        const tooltip = document.getElementById("vitalsChartTooltip");
+        if (!canvas || !tooltip) return;
+
+        canvas.addEventListener("mousemove", function(e) {
+          const rect = canvas.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+
+          let hovered = null;
+          let minDist = 20;
+
+          vitalsChartNodes.forEach(node => {
+            const dist = Math.hypot(node.x - mouseX, node.y - mouseY);
+            if (dist < minDist) {
+              minDist = dist;
+              hovered = node;
+            }
+          });
+
+          if (hovered) {
+            const v = hovered.data;
+            const dtStr = new Date(v.timestamp).toLocaleString(undefined, {
+              month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+            });
+
+            let detailHtml = `<strong>${dtStr}</strong><br>`;
+            if (hovered.metric === 'BP_SYS' || hovered.metric === 'BP_DIA') {
+              let category = "Normal BP (<120/80)";
+              if (v.sys >= 130 || v.dia >= 80) category = "Stage 1 Hypertension";
+              if (v.sys >= 140 || v.dia >= 90) category = "Stage 2 Hypertension";
+              detailHtml += `BP Reading: <strong>${v.sys} / ${v.dia} mmHg</strong><br><span style="color:#fef3c7; font-size:10px;">${category}</span>`;
+            } else if (hovered.metric === 'HR') {
+              let hrCat = v.hr >= 60 && v.hr <= 100 ? "Normal Resting HR" : "Elevated HR";
+              detailHtml += `Heart Rate: <strong>${v.hr} BPM</strong><br><span style="color:#fef3c7; font-size:10px;">${hrCat}</span>`;
+            } else if (hovered.metric === 'GLUCOSE') {
+              let gCat = v.glucose < 100 ? "Normal Fasting Glucose" : "Elevated Glucose";
+              detailHtml += `Glucose: <strong>${v.glucose} mg/dL</strong><br><span style="color:#fef3c7; font-size:10px;">${gCat}</span>`;
+            } else if (hovered.metric === 'WEIGHT') {
+              detailHtml += `Weight: <strong>${v.weight} lbs</strong>`;
+            }
+
+            if (v.notes) {
+              detailHtml += `<br><em>Note: ${v.notes}</em>`;
+            }
+
+            tooltip.innerHTML = detailHtml;
+            tooltip.style.display = "block";
+            tooltip.style.left = (hovered.x + 10) + "px";
+            tooltip.style.top = (hovered.y - 40) + "px";
+          } else {
+            tooltip.style.display = "none";
+          }
+        });
+
+        canvas.addEventListener("mouseleave", function() {
+          tooltip.style.display = "none";
+        });
+      }
+
+      function renderVitals() {
+        const vitals = getCurrentVitals();
+        const container = document.getElementById("vitalsHistoryContainer");
+
+        renderVitalsTrendChart(currentVitalMetric);
+
+        if (vitals.length > 0) {
+          const latest = vitals[vitals.length - 1];
+          document.getElementById("summaryBP").textContent = `${latest.sys} / ${latest.dia}`;
+          document.getElementById("summaryGlucose").textContent = latest.glucose || "--";
+          document.getElementById("summaryHR").textContent = latest.hr || "--";
+          document.getElementById("summaryWeight").textContent = latest.weight || "--";
+        }
+
+        if (vitals.length === 0) {
+          container.innerHTML = `<p style="color: var(--text-muted); padding: 12px;">No vitals logged yet. Use the form above to record today's vitals.</p>`;
+          return;
+        }
+
+        let html = `<table>
+          <thead>
+            <tr>
+              <th>Date / Time</th>
+              <th>Blood Pressure</th>
+              <th>Glucose</th>
+              <th>Heart Rate</th>
+              <th>Temp</th>
+              <th>Weight</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        vitals.slice().reverse().forEach(v => {
+          const date = new Date(v.timestamp).toLocaleString();
+          html += `<tr>
+            <td>${date}</td>
+            <td><strong>${v.sys} / ${v.dia} mmHg</strong></td>
+            <td>${v.glucose ? v.glucose + " mg/dL" : "--"}</td>
+            <td>${v.hr ? v.hr + " BPM" : "--"}</td>
+            <td>${v.temp ? v.temp + " °F" : "--"}</td>
+            <td>${v.weight ? v.weight + " lbs" : "--"}</td>
+            <td style="font-size: 12px; color: var(--text-muted);">${v.notes || "--"}</td>
+          </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      }
+
+      function renderRingtoneMappings() {
+        const list = document.getElementById("ringtoneMappingList");
+        const mappings = appState.settings.ringtoneMappings;
+
+        let html = `<table><thead><tr><th>Urgency Level</th><th>Tone Profile</th></tr></thead><tbody>`;
+        for (let urgency in mappings) {
+          html += `<tr><td><strong>${urgency}</strong></td><td>${mappings[urgency]}</td></tr>`;
+        }
+        html += `</tbody></table>`;
+        list.innerHTML = html;
+      }
+
+      function applySettings() {
+        if (appState.settings.highContrast) {
+          document.body.classList.add("high-contrast");
+        } else {
+          document.body.classList.remove("high-contrast");
+        }
+
+        if (appState.settings.compactView) {
+          document.body.classList.add("compact-mode");
+        } else {
+          document.body.classList.remove("compact-mode");
+        }
+
+        document.getElementById("toggleHighContrast").checked = appState.settings.highContrast;
+        document.getElementById("toggleCompactView").checked = appState.settings.compactView;
+      }
+
+      // EXPOSED GLOBAL ACTIONS
+      window.logDose = function(medId, medName, time, status) {
+        const logs = getCurrentLogs();
+        logs.push({
+          id: "log_" + Date.now(),
+          medId,
+          medName,
+          time,
+          status,
+          timestamp: Date.now()
+        });
+
+        if (status === "TAKEN") {
+          const meds = getCurrentMeds();
+          const med = meds.find(m => m.id === medId);
+          if (med && med.stockCount > 0) {
+            med.stockCount--;
+          }
+        }
+
+        saveState();
+        renderDashboard();
+      };
+
+      window.refillMedication = function(medId) {
+        const meds = getCurrentMeds();
+        const med = meds.find(m => m.id === medId);
+        if (med) {
+          const qty = prompt(`Refill stock count for ${med.name}:`, "30");
+          if (qty && !isNaN(parseInt(qty))) {
+            med.stockCount += parseInt(qty);
+            saveState();
+            renderDashboard();
+            renderMedications();
+          }
+        }
+      };
+
+      window.deleteMedication = function(medId) {
+        if (confirm("Are you sure you want to delete this medication record?")) {
+          appState.medications[appState.currentProfile] = getCurrentMeds().filter(m => m.id !== medId);
+          saveState();
+          renderDashboard();
+          renderMedications();
+        }
+      };
+
+      // EVENT LISTENERS
+      document.addEventListener("DOMContentLoaded", function() {
+        renderProfiles();
+        applySettings();
+        renderDashboard();
+
+        // Navigation Switcher
+        document.querySelectorAll(".nav-item").forEach(item => {
+          item.addEventListener("click", function() {
+            document.querySelectorAll(".nav-item").forEach(i => i.classList.remove("active"));
+            document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+
+            this.classList.add("active");
+            const viewId = "view-" + this.getAttribute("data-view");
+            document.getElementById(viewId).classList.add("active");
+
+            if (viewId === "view-dashboard") renderDashboard();
+            if (viewId === "view-medications") renderMedications();
+            if (viewId === "view-adherence") renderAdherenceGraph(7);
+            if (viewId === "view-vitals") {
+              renderVitals();
+              setupVitalsCanvasInteractivity();
+            }
+            if (viewId === "view-ringtones") renderRingtoneMappings();
+          });
+        });
+
+        // Profile Selection Switch
+        document.getElementById("profileSelect").addEventListener("change", function() {
+          appState.currentProfile = this.value;
+          saveState();
+          renderDashboard();
+        });
+
+        // Manual Sync Button
+        document.getElementById("btnManualSync").addEventListener("click", function() {
+          document.getElementById("syncStatusText").textContent = "Syncing...";
+          setTimeout(() => {
+            saveState();
+          }, 600);
+        });
+
+        // New Profile Modal Trigger
+        document.getElementById("btnAddProfileModal").addEventListener("click", function() {
+          document.getElementById("profileModal").classList.add("active");
+        });
+        document.getElementById("btnCloseProfileModal").addEventListener("click", function() {
+          document.getElementById("profileModal").classList.remove("active");
+        });
+        document.getElementById("btnCancelProfileModal").addEventListener("click", function() {
+          document.getElementById("profileModal").classList.remove("active");
+        });
+
+        document.getElementById("profileForm").addEventListener("submit", function(e) {
+          e.preventDefault();
+          const name = document.getElementById("newProfileName").value.trim();
+          if (name && !appState.profiles.includes(name)) {
+            appState.profiles.push(name);
+            appState.currentProfile = name;
+            saveState();
+            renderProfiles();
+            renderDashboard();
+            document.getElementById("profileModal").classList.remove("active");
+            document.getElementById("newProfileName").value = "";
+          }
+        });
+
+        // Medication Modal Trigger
+        document.getElementById("btnOpenAddMedModal").addEventListener("click", function() {
+          document.getElementById("medModalTitle").textContent = "Add New Medication";
+          document.getElementById("medicationForm").reset();
+          document.getElementById("medId").value = "";
+          document.getElementById("medicationModal").classList.add("active");
+        });
+
+        document.getElementById("btnCloseMedModal").addEventListener("click", function() {
+          document.getElementById("medicationModal").classList.remove("active");
+        });
+
+        document.getElementById("btnCancelMedModal").addEventListener("click", function() {
+          document.getElementById("medicationModal").classList.remove("active");
+        });
+
+        document.getElementById("medicationForm").addEventListener("submit", function(e) {
+          e.preventDefault();
+          const meds = getCurrentMeds();
+          const newMed = {
+            id: document.getElementById("medId").value || ("med_" + Date.now()),
+            name: document.getElementById("medName").value.trim(),
+            activeIngredients: document.getElementById("medActiveIngredients").value.trim(),
+            dosageForm: document.getElementById("medDosageForm").value,
+            urgency: document.getElementById("medUrgency").value,
+            schedulePattern: document.getElementById("medSchedulePattern").value,
+            doseTimes: document.getElementById("medDoseTimes").value.split(",").map(t => t.trim()).filter(Boolean),
+            stockCount: parseInt(document.getElementById("medStockCount").value) || 0,
+            dailyRate: parseInt(document.getElementById("medDailyRate").value) || 1,
+            doctor: document.getElementById("medDoctor").value.trim(),
+            instructions: document.getElementById("medInstructions").value.trim(),
+            sideEffects: document.getElementById("medSideEffects").value.trim()
+          };
+
+          meds.push(newMed);
+          saveState();
+          document.getElementById("medicationModal").classList.remove("active");
+          renderDashboard();
+          renderMedications();
+        });
+
+        // Vitals Trend Chart Metric Selectors
+        document.getElementById("btnVitalChartBP").addEventListener("click", function() {
+          document.querySelectorAll("#view-vitals .card-header button").forEach(b => b.className = "btn btn-secondary btn-small");
+          this.className = "btn btn-small";
+          renderVitalsTrendChart('BP');
+        });
+
+        document.getElementById("btnVitalChartHR").addEventListener("click", function() {
+          document.querySelectorAll("#view-vitals .card-header button").forEach(b => b.className = "btn btn-secondary btn-small");
+          this.className = "btn btn-small";
+          renderVitalsTrendChart('HR');
+        });
+
+        document.getElementById("btnVitalChartGlucose").addEventListener("click", function() {
+          document.querySelectorAll("#view-vitals .card-header button").forEach(b => b.className = "btn btn-secondary btn-small");
+          this.className = "btn btn-small";
+          renderVitalsTrendChart('GLUCOSE');
+        });
+
+        document.getElementById("btnVitalChartWeight").addEventListener("click", function() {
+          document.querySelectorAll("#view-vitals .card-header button").forEach(b => b.className = "btn btn-secondary btn-small");
+          this.className = "btn btn-small";
+          renderVitalsTrendChart('WEIGHT');
+        });
+
+        // Reminder Simulation Trigger
+        document.getElementById("btnSimulateReminder").addEventListener("click", function() {
+          const meds = getCurrentMeds();
+          if (meds.length === 0) {
+            alert("Please add a medication record first.");
+            return;
+          }
+          const sample = meds[0];
+          const tone = appState.settings.ringtoneMappings[sample.urgency || "MEDIUM"] || "Gentle Chime";
+          playTone(tone, appState.settings.volume);
+
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("Vanguard Health Reminder", {
+              body: `Due Now: ${sample.name} - ${sample.instructions || "Take dose"}`,
+              icon: ""
+            });
+          } else if ("Notification" in window && Notification.permission !== "denied") {
+            Notification.requestPermission();
+          }
+
+          alert(`SIMULATED ALERT TRIGGERED\n\nMedication: ${sample.name}\nUrgency: ${sample.urgency || "MEDIUM"}\nAudio Tone: ${tone}`);
+        });
+
+        // Adherence Filter Toggles
+        document.getElementById("btnFilter7Days").addEventListener("click", function() {
+          this.className = "btn btn-small";
+          document.getElementById("btnFilter30Days").className = "btn btn-secondary btn-small";
+          renderAdherenceGraph(7);
+        });
+
+        document.getElementById("btnFilter30Days").addEventListener("click", function() {
+          this.className = "btn btn-small";
+          document.getElementById("btnFilter7Days").className = "btn btn-secondary btn-small";
+          renderAdherenceGraph(30);
+        });
+
+        // Vitals Form Submission
+        document.getElementById("vitalsForm").addEventListener("submit", function(e) {
+          e.preventDefault();
+          const vitals = getCurrentVitals();
+          vitals.push({
+            id: "v_" + Date.now(),
+            sys: parseInt(document.getElementById("vitalSys").value),
+            dia: parseInt(document.getElementById("vitalDia").value),
+            glucose: parseInt(document.getElementById("vitalGlucose").value) || null,
+            hr: parseInt(document.getElementById("vitalHeartRate").value) || null,
+            temp: parseFloat(document.getElementById("vitalTemp").value) || null,
+            weight: parseFloat(document.getElementById("vitalWeight").value) || null,
+            notes: document.getElementById("vitalNotes").value.trim(),
+            timestamp: Date.now()
+          });
+
+          saveState();
+          renderVitals();
+          this.reset();
+        });
+
+        // Audio Testing & Mapping
+        document.getElementById("btnTestAudioTone").addEventListener("click", function() {
+          const profile = document.getElementById("ringtoneProfileSelect").value;
+          const vol = parseFloat(document.getElementById("ringtoneVolume").value);
+          playTone(profile, vol);
+        });
+
+        document.getElementById("btnSaveAudioMapping").addEventListener("click", function() {
+          const urgency = document.getElementById("ringtoneUrgencySelect").value;
+          const profile = document.getElementById("ringtoneProfileSelect").value;
+          appState.settings.ringtoneMappings[urgency] = profile;
+          appState.settings.volume = parseFloat(document.getElementById("ringtoneVolume").value);
+          saveState();
+          renderRingtoneMappings();
+          alert(`Saved tone mapping: ${urgency} -> ${profile}`);
+        });
+
+        // Preferences Toggles
+        document.getElementById("toggleHighContrast").addEventListener("change", function() {
+          appState.settings.highContrast = this.checked;
+          saveState();
+          applySettings();
+        });
+
+        document.getElementById("toggleCompactView").addEventListener("change", function() {
+          appState.settings.compactView = this.checked;
+          saveState();
+          applySettings();
+        });
+
+        // Backup Export / Import / Reset
+        document.getElementById("btnExportJSON").addEventListener("click", function() {
+          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+          const dlAnchor = document.createElement('a');
+          dlAnchor.setAttribute("href", dataStr);
+          dlAnchor.setAttribute("download", `Vanguard_Health_Backup_${appState.currentProfile}_${new Date().toISOString().slice(0,10)}.json`);
+          document.body.appendChild(dlAnchor);
+          dlAnchor.click();
+          dlAnchor.remove();
+        });
+
+        document.getElementById("importFileInput").addEventListener("change", function(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            try {
+              const imported = JSON.parse(evt.target.result);
+              if (imported && imported.profiles && imported.medications) {
+                appState = imported;
+                saveState();
+                renderProfiles();
+                applySettings();
+                renderDashboard();
+                alert("Data backup imported successfully.");
+              } else {
+                alert("Invalid backup JSON format.");
+              }
+            } catch (err) {
+              alert("Error parsing backup file: " + err.message);
+            }
+          };
+          reader.readAsText(file);
+        });
+
+        document.getElementById("btnResetCurrentProfile").addEventListener("click", function() {
+          if (confirm(`Are you sure you want to reset all data for profile '${appState.currentProfile}'?`)) {
+            delete appState.medications[appState.currentProfile];
+            delete appState.doseLogs[appState.currentProfile];
+            delete appState.vitalsLogs[appState.currentProfile];
+            saveState();
+            renderDashboard();
+            alert(`Profile '${appState.currentProfile}' data reset.`);
+          }
+        });
+
+        document.getElementById("btnResetAllData").addEventListener("click", function() {
+          if (confirm("DANGER: This will erase all profiles, medications, logs, and settings. Continue?")) {
+            localStorage.removeItem("VANGUARD_HEALTH_DATA");
+            location.reload();
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

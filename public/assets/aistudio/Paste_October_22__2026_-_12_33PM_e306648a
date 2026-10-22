@@ -1,0 +1,647 @@
+# CRITICAL REPAIR TASK: FIX THE EXISTING ANDROID MEDICATION ALARM SYSTEM COMPLETELY
+
+You are a senior Android engineer specializing in Kotlin, Android AlarmManager, notifications, foreground services, audio playback, background execution, Android permissions, and medication reminder applications.
+
+I have an existing medication tracking application built using Google AI Studio. I have generated and installed an APK on my Android phone. The application already has medication scheduling, alarm settings, local ringtone upload, and ringtone selection.
+
+**A previous attempt to fix the alarms failed. Do not repeat the previous approach. Investigate the actual source code, identify the root causes, and repair the existing application.**
+
+I am not a programmer. You must perform the coding changes yourself wherever your environment supports editing the project. Do not merely explain what I should code.
+
+## PART 1 — THE EXACT BUGS THAT MUST BE FIXED
+
+These are real problems observed while testing the installed APK:
+
+1. An alarm rings even when I have not granted notification permission.
+2. The alarm rings, but there is no visible medication notification.
+3. Sometimes I cannot identify which application is making the sound.
+4. Pressing the phone's volume-up or volume-down buttons does not stop the alarm.
+5. Pressing the power button to lock the phone does not stop the alarm.
+6. Opening the medication application while the alarm is ringing does not show a clear way to stop the active alarm.
+7. Some medicines trigger alarms, while other scheduled medicines do not.
+8. The ringtone that plays is not necessarily the ringtone selected in Alarm Settings.
+9. There is no reliable connection between a scheduled dose, its notification, its ringtone, and its taken/pending status.
+10. In the medication creation form, I need a custom medication time instead of being restricted to options such as Morning, Afternoon, Evening, or Night.
+
+The alarm became so difficult to stop that I had to uninstall the application to silence it.
+
+**Treat this as a critical reliability and safety defect. An alarm must never become an uncontrollable background process.**
+
+Do not fix these problems by simply changing the UI. Inspect the native implementation, fix the underlying scheduling and lifecycle problems, and test the actual APK behavior.
+
+## PART 2 — STRICT NOTIFICATION-PERMISSION RULE
+
+This is one of the highest-priority requirements.
+
+### When notification permission has NOT been granted
+
+If the user has denied notification permission, the app must NOT start an audible medication alarm.
+
+Specifically:
+
+- Do not start the selected ringtone.
+- Do not start a background audio service for a medication alarm.
+- Do not trigger a hidden audible alarm.
+- Do not allow an alarm to continue ringing invisibly.
+- Do not silently bypass the notification-permission restriction.
+- Do not claim that a reminder notification has been delivered when it has not.
+
+Instead, show a clear explanation inside the app:
+
+"Medication notifications are disabled. Enable notifications to receive medication reminders and alarm sounds."
+
+Provide a button labeled **Enable Notifications** that requests the appropriate permission or opens the relevant system settings page.
+
+The user must explicitly grant permission before the application enables audible medication alarms.
+
+### Important implementation details
+
+For Android:
+
+- Check the actual notification permission at the time alarms are scheduled and again when they fire.
+- Check whether notifications are enabled for the app.
+- Check whether the relevant notification channel is enabled and not blocked.
+- Account for Android versions that do not require the same runtime notification permission.
+- Handle permission denial, permanent denial where applicable, revocation, and changes in system settings.
+- If permission is revoked after alarms have been scheduled, stop any currently active alarm and prevent further audible alarms until the required permission is restored.
+- Cancel or disable pending alarm behavior that could otherwise start hidden audio. If a system alarm callback still fires, it must perform the permission checks and exit safely.
+- Recheck permissions when the app resumes and reconcile pending medication alarms.
+
+Do not assume that denying Android's POST_NOTIFICATIONS permission automatically disables AlarmManager or all audio playback. Implement the permission gate explicitly.
+
+**Required invariant: An audible medication alarm must never start unless the application is currently permitted to post the required visible medication notification.**
+
+If notification delivery cannot be guaranteed because permission or channel settings are disabled, do not start the ringtone.
+
+## PART 3 — FIX THE ROOT CAUSE OF MISSING NOTIFICATIONS
+
+Every triggered medication alarm must be associated with a real Android notification.
+
+The notification must be created using the appropriate native Android notification APIs, not a browser notification, a temporary UI component, or a simulated notification inside the application.
+
+Use the existing Kotlin architecture wherever possible.
+
+Inspect and repair:
+
+- NotificationManager usage.
+- Notification channels.
+- Notification permission checks.
+- Notification IDs.
+- PendingIntent request codes and flags.
+- BroadcastReceiver registration.
+- AlarmManager callbacks.
+- Foreground service lifecycle.
+- Android manifest declarations.
+- Runtime permission handling.
+- Application lifecycle and process recreation.
+- Exception handling when notifications or audio fail.
+
+Use stable, unique identifiers for every medicine and scheduled dose.
+
+Do not reuse the same notification ID or PendingIntent identity for every medicine in a way that overwrites other reminders.
+
+Create a suitable notification channel for medication reminders. Configure its importance and sound behavior appropriately, and account for the fact that Android generally does not allow an existing notification channel's sound settings to be freely changed programmatically after creation.
+
+If an existing channel is incorrectly configured, provide a safe migration to a correctly configured channel without deleting user data.
+
+Do not create a second alarm-playing mechanism that competes with the first.
+
+### Required behavior when an alarm fires
+
+1. Identify the exact scheduled dose.
+2. Check notification permission and channel availability.
+3. If the checks fail, do not play audio. Record the failure safely and leave a clear status in the application when the user opens it.
+4. If the checks pass, post a notification containing the medicine name, scheduled time, reminder text, and notification actions.
+5. Start alarm audio only through the correctly configured and permitted playback mechanism.
+6. Keep the notification and active-alarm state synchronized.
+7. Stop playback and clean up resources when the alarm is acknowledged, stopped, dismissed, or otherwise terminated.
+
+Do not use an arbitrary delay to make the notification appear after the sound starts. The notification must be posted as part of the same controlled alarm-triggering flow, before starting audible playback.
+
+Where Android APIs do not provide proof that a notification was actually shown to the user, do not claim guaranteed delivery. Check all permissions and channel settings that can be checked, and handle failures safely.
+
+## PART 4 — EXACT NOTIFICATION DESIGN
+
+Every medication reminder notification must have the following content.
+
+**Title:**
+
+Medication Reminder
+
+**Notification body:**
+
+It is time to take your [MEDICINE NAME].
+
+**Additional information:**
+
+Scheduled time: [MEDICATION TIME]
+
+**Gentle reminder message:**
+
+"This is a gentle reminder to take your [MEDICINE NAME]."
+
+For example, if the medicine is Paracetamol and its scheduled time is 8:30 PM, the notification should display:
+
+Medication Reminder
+
+It is time to take your Paracetamol.
+
+Scheduled time: 8:30 PM
+
+This is a gentle reminder to take your Paracetamol.
+
+Do not hardcode the example medicine. Populate the notification from the actual saved medication record and its scheduled dose.
+
+Ensure that the medicine name and time remain correct even when multiple medicines are scheduled for the same day.
+
+Use a clear medication-related icon, an appropriate notification priority, and a readable layout.
+
+If the user has configured the system to hide sensitive notification content on the lock screen, respect the operating system's privacy settings.
+
+## PART 5 — ADD TWO ACTION BUTTONS DIRECTLY TO THE NOTIFICATION
+
+I want two visible action buttons, similar to the action buttons available in Gmail notifications.
+
+### Action 1: SNOOZE
+
+Label: **Snooze**
+
+When tapped:
+
+- Stop the currently playing ringtone immediately.
+- Cancel or terminate the active alarm playback session.
+- Schedule a new reminder for the same dose after a configurable snooze interval.
+- Use a sensible default interval, such as 10 minutes, if the app does not already have a snooze setting.
+- Preserve the original medicine and dose identity.
+- Do not mark the medicine as taken.
+- Update the notification appropriately.
+- Ensure that snoozing does not create duplicate alarms.
+- Respect notification permissions and all other alarm restrictions when scheduling the snoozed reminder.
+
+If the snoozed reminder fires, it must go through the same notification-permission and audio checks as any other medication alarm.
+
+### Action 2: MARK AS TAKEN
+
+Label: **Mark as Taken**
+
+When tapped:
+
+- Stop the ringtone immediately.
+- Cancel the active playback session.
+- Mark only the correct scheduled dose as taken.
+- Save the status in the existing persistent database.
+- Cancel the corresponding active or snoozed alarm.
+- Update the notification to indicate that the dose has been taken, or dismiss it appropriately.
+- Update the app's medication history and adherence tracking.
+- Do not mark future doses as taken.
+- Do not mark other medicines as taken.
+- Ensure the action works when the app is closed or the screen is locked, subject to Android's supported background execution rules.
+
+Both actions must work directly from the notification without requiring the user to open the app.
+
+Use the correct Android notification action mechanisms and make the operations safe against duplicate taps.
+
+## PART 6 — MAKE THE STOPPING MECHANISM RELIABLE
+
+The previous implementation allowed an alarm to ring uncontrollably. This must not happen again.
+
+Create a central, reliable alarm-playback controller.
+
+The controller must track:
+
+- Which medicine is ringing.
+- Which scheduled dose triggered the alarm.
+- Which ringtone is being played.
+- Whether playback is active.
+- Which notification corresponds to the active alarm.
+- Whether the dose has been snoozed, taken, or dismissed.
+
+All stop operations must terminate the actual audio playback, not merely dismiss the notification.
+
+### Required stop behavior
+
+The active ringtone must stop when:
+
+1. The user taps Snooze.
+2. The user taps Mark as Taken.
+3. The user dismisses the active alarm notification, when the platform delivers a supported dismissal callback.
+4. The user uses a supported in-app Stop Alarm button.
+5. The active alarm is canceled because its medicine or schedule is deleted.
+6. The application detects a fatal playback or lifecycle error requiring termination.
+
+Also provide an easily accessible **Stop Active Alarm** control in the app's main screen or active-alarm screen. If an alarm is ringing, opening the application must show which medicine is ringing and provide a prominent stop control.
+
+Do not rely solely on notification dismissal callbacks, because Android does not guarantee that every possible dismissal path produces a callback.
+
+Do not leave an audio service, MediaPlayer, ExoPlayer instance, or other playback object running after the alarm has been stopped.
+
+Handle application crashes and service recreation without accidentally restarting an old alarm.
+
+### Physical volume buttons
+
+I previously tried pressing volume-up and volume-down, but the alarm continued.
+
+Investigate whether the current app is intercepting keys, playing through an unsuitable audio stream, or failing to stop playback.
+
+Implement volume-button stopping only where Android actually permits it. Do not globally intercept volume keys or break normal volume controls.
+
+If volume-key events cannot reliably be detected while the application is in the background or the screen is locked, explain that limitation and ensure that notification actions and the app's Stop Active Alarm control work reliably instead.
+
+### Power button and screen locking
+
+Do not try to intercept or override the Android power button.
+
+The alarm should not become invisible or uncontrollable when the screen locks. If background playback is active and permitted, it may continue while the screen is off, but the notification must remain available to identify and control the active alarm.
+
+Never claim that an ordinary Android app can reliably detect every power-button press.
+
+## PART 7 — RESPECT SILENT MODE AND VIBRATION SETTINGS
+
+This requirement is mandatory.
+
+At the exact time a medicine is due, inspect the phone's current ringer mode and relevant audio settings.
+
+### Scenario A: The phone is in silent mode
+
+Expected behavior:
+
+- Display the medication reminder notification if notifications are permitted.
+- Vibrate the phone when vibration is supported and enabled.
+- Do NOT play the selected ringtone.
+- Do NOT force the phone out of silent mode.
+- Do NOT increase the phone's volume.
+- Do NOT bypass Do Not Disturb or other system restrictions.
+
+If vibration is disabled, unavailable, or prohibited by system settings, respect those restrictions.
+
+### Scenario B: The phone is not in silent mode
+
+Expected behavior:
+
+- Display the medication reminder notification.
+- Vibrate the phone when vibration is supported and enabled.
+- Play the exact ringtone selected in Alarm Settings, if permitted by the phone's current sound and notification settings.
+
+The application must not always use the same hardcoded sound.
+
+Check the phone's current ringer mode at the time the alarm fires, rather than relying only on the mode that existed when the medicine was scheduled.
+
+If Android restricts access to a required audio state, use the supported API and document the limitation. Do not attempt to bypass system policies.
+
+### Avoid duplicate sounds
+
+Choose one coherent playback architecture.
+
+If the application manually plays the selected ringtone through a properly managed background playback service, do not also configure the notification to play a second copy of the same sound.
+
+If the notification channel is responsible for sound playback, ensure it uses the intended supported sound configuration and does not conflict with the app's audio service.
+
+For this application, prioritize the ability to use the user's selected uploaded or preset ringtone and stop it reliably.
+
+The selected ringtone must be the single source of truth for alarm playback.
+
+## PART 8 — FIX THE WRONG RINGTONE PROBLEM
+
+The application already has Alarm Settings, including uploaded local audio and ringtone selection.
+
+Inspect the complete path from ringtone selection to scheduled alarm playback.
+
+Determine why the selected ringtone is being ignored.
+
+Potential problems to investigate include:
+
+- A hardcoded default audio resource.
+- A missing or incorrectly saved ringtone URI.
+- A temporary content URI that becomes inaccessible.
+- A notification channel using a different sound.
+- A background service that never reads the saved ringtone.
+- A database field that is not connected to the alarm scheduler.
+- A default ringtone being played after process recreation.
+- An audio player that falls back silently or incorrectly.
+- An incorrectly persisted local file reference.
+
+Fix the actual cause.
+
+### Required ringtone behavior
+
+- If Preset Alarm 1 is selected, play Preset Alarm 1.
+- If Preset Alarm 2 is selected, play Preset Alarm 2.
+- If Preset Alarm 3 is selected, play Preset Alarm 3.
+- If a local audio file is selected, play that exact file.
+- If the user changes the ringtone, all future alarms must use the new selection.
+- If a previously selected file becomes unavailable, do not crash or play an unrelated ringtone without explanation.
+- Show a clear error in the app and let the user select a valid ringtone.
+- Persist the selection across application restarts and device reboots where supported.
+
+Preserve the three existing preset ringtone choices and the local upload feature. Do not remove them.
+
+## PART 9 — FIX MEDICINES THAT NEVER TRIGGER THEIR ALARMS
+
+Only some medicines currently produce alarms. Investigate the scheduling and database logic rather than adding another timer.
+
+Every active scheduled dose must have a corresponding scheduled alarm.
+
+Inspect for:
+
+- Duplicate or colliding alarm identifiers.
+- Shared PendingIntent identities that overwrite another medicine's alarm.
+- Incorrect medicine IDs.
+- Incorrect date/time conversions.
+- AM/PM mistakes.
+- Time-zone and daylight-saving handling where relevant.
+- Incorrect recurring-schedule logic.
+- Alarms canceled accidentally when another medicine is edited.
+- Alarms scheduled only for the first medicine in a list.
+- Database queries that skip some medicines.
+- Incorrect filtering of active or enabled medicines.
+- Alarms that are not restored after application process recreation or reboot.
+- AlarmManager calls that fail or are never executed.
+- Incorrect permission assumptions.
+- Race conditions between medication saving and alarm scheduling.
+- Alarm callbacks that crash before posting a notification.
+
+### Required scheduling rules
+
+Every scheduled dose must have a stable identity.
+
+For example, two medicines scheduled at 8:00 AM must still have two independent dose identities and must not overwrite each other's PendingIntent or notification.
+
+When the user adds a medicine:
+1. Validate the medicine data.
+2. Save the medicine to persistent storage.
+3. Generate its scheduled dose instances or scheduling records as required by the existing architecture.
+4. Schedule every required alarm.
+5. Verify that scheduling succeeded where the APIs permit.
+6. Show the saved medication and next scheduled time in the app.
+
+When a user edits a medicine, cancel the old relevant alarms and schedule the updated ones.
+
+When a user deletes a medicine, cancel only that medicine's alarms.
+
+When a dose is marked as taken, do not cancel unrelated doses or future doses.
+
+Use exact alarms only where appropriate and permitted. If exact-alarm access is missing, explain the situation to the user rather than silently pretending that an exact alarm was scheduled.
+
+Account for reboot restoration and time changes through supported Android mechanisms.
+
+Do not use a simple in-memory list or a repeating JavaScript timer as the only source of truth.
+
+## PART 10 — ADD A CUSTOM TIME OPTION TO THE MEDICATION FORM
+
+Modify the existing Add Medication/Edit Medication form.
+
+Currently, the form restricts the user to predefined time categories such as:
+
+- Morning
+- Afternoon
+- Evening
+- Night
+
+Preserve these options, but add a clearly visible additional option:
+
+**Custom Time**
+
+When the user selects Custom Time, display a native-style time picker or a clear time-entry control that lets the user select the exact time for the medication.
+
+Examples:
+
+- 7:15 AM
+- 10:40 AM
+- 1:25 PM
+- 4:50 PM
+- 9:35 PM
+- 11:45 PM
+
+The user must not be restricted to the examples above. They must be able to choose any valid time supported by the time picker.
+
+### Custom-time requirements
+
+- Allow hour and minute selection.
+- Handle AM/PM correctly if the app uses a 12-hour display.
+- Store and process the time correctly in the application's existing data model.
+- Ensure the selected time appears correctly on the medication details screen.
+- Use the selected custom time to schedule the real alarm.
+- Ensure the notification displays the same scheduled time.
+- Support editing an existing custom time.
+- Reschedule the correct alarm when the time changes.
+- Preserve multiple daily doses when the existing medication model supports them.
+- Support recurring medication schedules and start/end dates as implemented by the current app.
+- Do not silently round a custom time to Morning, Afternoon, Evening, or Night.
+- Do not reset the user's custom time when the app is reopened.
+
+If a medicine can have multiple daily doses, support a separate time for each dose instead of assuming that one medicine always has one alarm per day.
+
+If the user changes a medicine's scheduled time while an alarm is already ringing, handle the active alarm safely and update future schedules without leaving a stale alarm running.
+
+## PART 11 — ARCHITECTURE AND ANDROID LIFECYCLE
+
+Before coding, inspect the existing project.
+
+Identify:
+
+- The application entry point.
+- Whether this is a native Kotlin Android application or a web application packaged inside an Android wrapper.
+- The Gradle configuration and Android SDK target.
+- The existing medication database.
+- The current alarm scheduler.
+- The notification code.
+- The audio playback code.
+- The local file upload and ringtone persistence code.
+- The manifest and permissions.
+- Any existing background services and receivers.
+
+If this is the existing native Kotlin project, implement the repair in Kotlin using the correct native Android APIs. Do not replace the application with a new web-only implementation.
+
+Use a suitable architecture for:
+
+- Medication scheduling.
+- Alarm triggering.
+- Notification construction.
+- Background ringtone playback.
+- Snooze and taken actions.
+- Active-alarm tracking.
+- Permission validation.
+- Reboot recovery.
+- Persistent medicine data.
+
+Use AlarmManager and an appropriate background execution mechanism where required.
+
+A foreground service may be appropriate for ongoing alarm playback, but it must use the correct service type, notification, lifecycle, and permissions for the Android versions targeted by the application.
+
+Do not start a foreground service unnecessarily or use unsupported background execution techniques.
+
+Avoid deprecated APIs when supported alternatives exist.
+
+Keep code modular enough that one alarm can be stopped without accidentally stopping or corrupting another medicine's reminder.
+
+Do not use Accessibility Services, device-admin privileges, or invasive permissions to force alarms to work.
+
+## PART 12 — HANDLE PERMISSIONS AND SETTINGS HONESTLY
+
+Create or improve a clear alarm-status section in Settings.
+
+Display:
+
+- Notification permission: Enabled/Disabled.
+- Medication notification channel: Enabled/Disabled.
+- Selected ringtone: Actual preset or uploaded file name.
+- Alarm scheduling capability: Available/Restricted where applicable.
+- Exact-alarm access: Allowed/Not allowed, if applicable.
+- Vibration availability: Available/Restricted where detectable.
+
+Provide a clear action to open the relevant Android settings when a required permission is missing.
+
+Explain that Android can restrict alarm delivery due to permission settings, battery restrictions, notification-channel settings, or manufacturer-specific behavior.
+
+Never falsely show "All alarms working" just because the user has selected a ringtone.
+
+If a required permission is missing, explicitly show which feature will not work.
+
+Do not request unrelated permissions.
+
+Do not attempt to circumvent user-denied permissions.
+
+## PART 13 — CREATE A CENTRAL ALARM STATE MACHINE
+
+Implement an explicit, persistent or safely recoverable state model for each scheduled dose.
+
+At minimum, distinguish these states:
+
+- Scheduled.
+- Due/Alarm Active.
+- Snoozed.
+- Taken.
+- Canceled.
+- Delivery Failed, where appropriate.
+
+Use transitions that prevent inconsistent states.
+
+Examples:
+
+Scheduled → Due/Alarm Active → Taken
+
+Scheduled → Due/Alarm Active → Snoozed → Due/Alarm Active
+
+Scheduled → Canceled
+
+A notification action must not accidentally transition the wrong dose.
+
+The alarm controller must not restart a stopped alarm simply because a service is recreated or an old callback arrives.
+
+When stopping an alarm, cancel the actual playback, release audio resources, update the active-alarm record, and cancel or update the relevant notification.
+
+If multiple doses become due at once, keep their identities separate and handle their notifications predictably.
+
+Do not let an alarm for Medicine A overwrite the ringtone, notification, or status of Medicine B.
+
+## PART 14 — AUTOMATED TESTS AND REAL-DEVICE VERIFICATION
+
+Do not finish the task merely because the project compiles.
+
+Add tests for the scheduling and notification logic, and run whatever tests your environment supports.
+
+Test these scenarios:
+
+1. Notifications denied: a scheduled dose must not start audible playback.
+2. Notifications granted: a scheduled dose must produce the required medication notification and selected ringtone when permitted.
+3. Notification channel disabled: the app must not start an invisible audible alarm.
+4. Notification permission revoked after scheduling: future alarms must not ring invisibly.
+5. Preset ringtone 1 selected: the correct sound plays.
+6. Preset ringtone 2 selected: the correct sound plays.
+7. Preset ringtone 3 selected: the correct sound plays.
+8. Uploaded local ringtone selected: the correct uploaded sound plays.
+9. Ringtone changed after scheduling: the next reminder uses the new selection.
+10. Medicine A and Medicine B scheduled for the same time: both remain independently identifiable.
+11. Multiple medicines scheduled at different times: each triggers correctly.
+12. Custom medication time: the alarm fires at the selected time.
+13. Custom time edited: the old alarm is canceled and the new one is scheduled.
+14. Medicine deleted: its future alarm is canceled.
+15. Snooze tapped: current audio stops and the correct dose is rescheduled.
+16. Mark as Taken tapped: audio stops and only the correct dose is marked taken.
+17. Alarm notification dismissed: stop playback if the supported dismissal callback is delivered.
+18. App backgrounded: reminder behavior remains correct where permitted.
+19. Screen locked: the notification and supported background playback behavior remain correct.
+20. Device rebooted: future alarms are restored where supported and permitted.
+21. Ringtone file removed: no crash and no unrelated sound.
+22. Permission revoked during playback: stop the alarm and terminate the active playback session safely.
+23. Alarm service restarted: no stale alarm restarts without a valid active dose.
+24. Volume buttons: verify actual supported behavior and document any background restrictions.
+25. Power button: verify that screen locking does not make the active alarm uncontrollable.
+26. Silent mode: vibration only, without the selected ringtone, subject to system restrictions.
+27. Normal ringer mode: vibration and selected ringtone, subject to system restrictions.
+28. No duplicate alarms or duplicate notifications after repeated edits or restarts.
+
+Use test times that are close enough to verify during development, but also test the actual installed APK on a physical Android device.
+
+Clearly distinguish between automated tests, emulator tests, and physical-device tests.
+
+Do not state that an alarm works on a locked phone or after reboot unless you have evidence from the appropriate test.
+
+## PART 15 — IMPLEMENTATION RULES
+
+These instructions are mandatory:
+
+- Work on the existing application.
+- Do not create a separate demonstration project.
+- Do not remove existing medication data or functionality.
+- Do not replace real scheduling with mock timers.
+- Do not fake notification delivery.
+- Do not fake successful permission checks.
+- Do not hardcode a ringtone that ignores the user's selection.
+- Do not use one shared alarm identifier for every medicine.
+- Do not hide alarm failures from the user.
+- Do not leave the ringtone playing after a stop action.
+- Do not add unnecessary permissions or background services.
+- Do not break the existing medication interface.
+- Preserve the current visual design wherever possible.
+- Make all changes directly in the project files when editing is supported.
+- If you cannot access or modify a required file, identify the missing file or limitation explicitly instead of pretending the repair is complete.
+
+Back up the project before substantial changes if your environment supports it.
+
+Prioritize correctness, permission handling, reliable stopping, and medication schedule integrity over visual redesign.
+
+## PART 16 — FINAL ACCEPTANCE CRITERIA
+
+The repair is not complete until the following conditions are satisfied:
+
+**A. Permission safety:** If required notification permission or notification-channel availability is missing, no audible medication alarm starts.
+
+**B. Visible identification:** When an alarm is triggered with the required permissions enabled, a medication notification is posted through the supported Android notification mechanism. The notification identifies the medicine and scheduled time and contains the gentle reminder message.
+
+**C. Correct actions:** Snooze and Mark as Taken work directly from the notification and operate on the correct scheduled dose.
+
+**D. Correct sound:** The selected preset or uploaded ringtone is the sound used by the alarm.
+
+**E. Silent-mode behavior:** Silent mode results in vibration without the ringtone, when vibration is available and permitted. Normal ringer mode uses vibration and the selected ringtone, when permitted.
+
+**F. Schedule reliability:** Every active scheduled dose is independently scheduled and processed. No medicines are silently skipped because of identifier collisions or database errors.
+
+**G. Custom time:** The user can select, save, edit, and schedule any valid custom medication time.
+
+**H. Safe termination:** No alarm continues playing invisibly after its playback session has been stopped. The user can control the active alarm through supported notification actions or the in-app Stop Active Alarm control.
+
+**I. Persistent state:** Ringtone selection, medication schedules, and dose status survive application restarts.
+
+**J. Honest reporting:** Unsupported behavior, untested cases, missing assets, and build failures are explicitly reported.
+
+## FINAL INSTRUCTIONS
+
+Start by diagnosing the existing source code and explaining briefly which actual code paths are responsible for the observed problems.
+
+Then implement the fixes. Do not stop after providing an analysis or a proposed solution.
+
+After making the changes, build the application if your environment supports building it, run the available tests, and provide a concise report containing:
+
+1. The root causes identified.
+2. The exact files modified or created.
+3. The alarm and notification architecture now implemented.
+4. How notification permission is enforced.
+5. How Snooze and Mark as Taken stop the ringtone and update the correct dose.
+6. How custom medication times are saved and scheduled.
+7. How the selected ringtone and silent-mode behavior are handled.
+8. Which tests actually passed and which were not run.
+9. Any remaining Android limitations.
+10. Whether a new APK was successfully built and where it is available.
+
+**Do not tell me that the issue is fixed unless the relevant code has actually been changed. Do not claim physical-device testing if it has not been performed. My priority is to eliminate invisible, uncontrollable alarms and make every scheduled medicine reminder identifiable, controllable, and reliable.**

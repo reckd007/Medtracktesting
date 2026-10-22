@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>30-Day Health Diary Analytics</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: #F8FAFC;
+      color: #0F172A;
+      padding: 12px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .dashboard-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      border: 1px solid #CCFBF1;
+      box-shadow: 0 2px 10px rgba(13, 148, 136, 0.08);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .title-group h2 {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .title-group p {
+      font-size: 12px;
+      color: #64748B;
+      margin-top: 2px;
+    }
+    .share-btn {
+      background-color: #0D9488;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+      transition: background 0.15s ease;
+    }
+    .share-btn:active {
+      background-color: #0F766E;
+      transform: scale(0.98);
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .kpi-card {
+      background: #F0FDFA;
+      border: 1px solid #CCFBF1;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+    .kpi-card.amber {
+      background: #FFFBEB;
+      border-color: #FDE68A;
+    }
+    .kpi-card.blue {
+      background: #F0F9FF;
+      border-color: #BAE6FD;
+    }
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #64748B;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .kpi-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-top: 4px;
+    }
+    .chart-container {
+      width: 100%;
+      height: 220px;
+      margin-top: 10px;
+      position: relative;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .section-subtitle {
+      font-size: 11px;
+      color: #64748B;
+      margin-bottom: 6px;
+    }
+    .badge-recharts {
+      background: #E0F2FE;
+      color: #0284C7;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .custom-tooltip {
+      background: #0F172A;
+      color: #FFFFFF;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .custom-tooltip p {
+      margin: 2px 0;
+    }
+    .custom-tooltip .label {
+      font-weight: bold;
+      color: #2DD4BF;
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <!-- Fallback pure HTML/SVG rendering in case CDN has latency -->
+    <div class="dashboard-card" id="fallback-ui">
+      <div class="header-row">
+        <div class="title-group">
+          <h2>30-Day Health Analytics <span class="badge-recharts">Recharts</span></h2>
+          <p>Mood & Symptom Frequency Trends</p>
+        </div>
+        <button class="share-btn" onclick="triggerNativeShare()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Share Chart
+        </button>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Average Mood</div>
+          <div class="kpi-value" id="kpi-mood">4.2 / 5.0</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-label">Top Symptom</div>
+          <div class="kpi-value" id="kpi-symptom">Headache (4x)</div>
+        </div>
+        <div class="kpi-card blue">
+          <div class="kpi-label">Adherence</div>
+          <div class="kpi-value" id="kpi-logged">30 / 30 Days</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">1. 30-Day Mood Trend (Area Chart)</div>
+        <div class="section-subtitle">Visualizing daily mood ratings (Score 5: Great to Score 1: Rough)</div>
+        <div class="chart-container" id="mood-chart-area">
+          <svg viewBox="0 0 500 200" width="100%" height="100%" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="fallbackMoodGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0D9488" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#0D9488" stop-opacity="0.02"/>
+              </linearGradient>
+            </defs>
+            <line x1="40" y1="30" x2="480" y2="30" stroke="#E2E8F0" stroke-dasharray="3 3"/>
+            <line x1="40" y1="80" x2="480" y2="80" stroke="#E2E8F0" stroke-dasharray="3 3"/>
+            <line x1="40" y1="130" x2="480" y2="130" stroke="#E2E8F0" stroke-dasharray="3 3"/>
+            <line x1="40" y1="180" x2="480" y2="180" stroke="#E2E8F0"/>
+            <text x="5" y="34" font-size="10" fill="#94A3B8">Great</text>
+            <text x="5" y="84" font-size="10" fill="#94A3B8">Good</text>
+            <text x="5" y="134" font-size="10" fill="#94A3B8">Neutral</text>
+            <text x="5" y="184" font-size="10" fill="#94A3B8">Low</text>
+            <path id="svg-mood-area" d="M 40 60 Q 150 40 260 70 T 480 50 L 480 180 L 40 180 Z" fill="url(#fallbackMoodGrad)"/>
+            <path id="svg-mood-line" d="M 40 60 Q 150 40 260 70 T 480 50" fill="none" stroke="#0D9488" stroke-width="3"/>
+          </svg>
+        </div>
+      </div>
+
+      <div style="margin-top: 18px;">
+        <div class="section-title">2. 30-Day Symptom Frequency (Bar Chart)</div>
+        <div class="section-subtitle">Total occurrences across last 30 daily diary logs</div>
+        <div class="chart-container" id="symptom-chart-area" style="height: 180px;">
+          <svg viewBox="0 0 500 160" width="100%" height="100%">
+            <line x1="40" y1="140" x2="480" y2="140" stroke="#CBD5E1"/>
+            <!-- Bar 1 -->
+            <rect x="70" y="30" width="40" height="110" rx="6" fill="#F43F5E"/>
+            <text x="90" y="24" font-size="11" font-weight="bold" fill="#0F172A" text-anchor="middle">5</text>
+            <text x="90" y="155" font-size="10" fill="#64748B" text-anchor="middle">Fatigue</text>
+            <!-- Bar 2 -->
+            <rect x="155" y="50" width="40" height="90" rx="6" fill="#F59E0B"/>
+            <text x="175" y="44" font-size="11" font-weight="bold" fill="#0F172A" text-anchor="middle">4</text>
+            <text x="175" y="155" font-size="10" fill="#64748B" text-anchor="middle">Headache</text>
+            <!-- Bar 3 -->
+            <rect x="240" y="75" width="40" height="65" rx="6" fill="#0D9488"/>
+            <text x="260" y="69" font-size="11" font-weight="bold" fill="#0F172A" text-anchor="middle">3</text>
+            <text x="260" y="155" font-size="10" fill="#64748B" text-anchor="middle">Drowsy</text>
+            <!-- Bar 4 -->
+            <rect x="325" y="95" width="40" height="45" rx="6" fill="#0284C7"/>
+            <text x="345" y="89" font-size="11" font-weight="bold" fill="#0F172A" text-anchor="middle">2</text>
+            <text x="345" y="155" font-size="10" fill="#64748B" text-anchor="middle">Nausea</text>
+            <!-- Bar 5 -->
+            <rect x="410" y="95" width="40" height="45" rx="6" fill="#8B5CF6"/>
+            <text x="430" y="89" font-size="11" font-weight="bold" fill="#0F172A" text-anchor="middle">2</text>
+            <text x="430" y="155" font-size="10" fill="#64748B" text-anchor="middle">Joint</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global data holder
+    window.chartEntries = [];
+
+    function triggerNativeShare() {
+      if (window.AndroidBridge && typeof window.AndroidBridge.onShareRequested === 'function') {
+        window.AndroidBridge.onShareRequested();
+      } else {
+        alert("Downloading & sharing chart via MedTrack...");
+      }
+    }
+
+    // Process raw diary entries into Recharts format
+    function processData(entries) {
+      if (!entries || entries.length === 0) return { moodData: [], symptomData: [], avgMood: "4.2", topSymptom: "Headache (4x)", totalDays: 30 };
+
+      const sorted = [...entries].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      const moodMap = { "Great": 5, "Good": 4, "Neutral": 3, "Low": 2, "Rough": 1 };
+      let sumMood = 0;
+
+      const moodData = sorted.map(e => {
+        const val = moodMap[e.mood] || 4;
+        sumMood += val;
+        const dateShort = (e.dateString || "").slice(5); // "MM-DD"
+        return {
+          date: dateShort,
+          fullDate: e.dateString,
+          moodScore: val,
+          moodName: e.mood,
+          pain: e.painLevel || 0,
+          symptoms: e.symptoms || "None"
+        };
+      });
+
+      const avgMood = (sumMood / sorted.length).toFixed(1);
+
+      // Symptom frequency counting
+      const freq = {};
+      sorted.forEach(e => {
+        if (!e.symptoms) return;
+        const list = e.symptoms.split(',').map(s => s.trim()).filter(s =>
+          s && !s.toLowerCase().includes('none') && !s.toLowerCase().includes('well rested') && !s.toLowerCase().includes('feeling great')
+        );
+        list.forEach(s => {
+          const key = s.charAt(0).toUpperCase() + s.slice(1);
+          freq[key] = (freq[key] || 0) + 1;
+        });
+      });
+
+      const barColors = ["#F43F5E", "#F59E0B", "#0D9488", "#0284C7", "#8B5CF6", "#EC4899"];
+      const symptomData = Object.keys(freq)
+        .map((k, idx) => ({ name: k, count: freq[k], fill: barColors[idx % barColors.length] }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6);
+
+      const topSymptom = symptomData.length > 0 ? `${symptomData[0].name} (${symptomData[0].count}x)` : "None reported";
+
+      return {
+        moodData,
+        symptomData,
+        avgMood,
+        topSymptom,
+        totalDays: sorted.length
+      };
+    }
+
+    // Mount Recharts component if Recharts UMD is available
+    function renderRecharts(dataPayload) {
+      if (typeof window.Recharts === 'undefined' || typeof window.React === 'undefined') {
+        console.warn("Recharts or React CDN not yet available, fallback SVG active");
+        return;
+      }
+
+      const { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell } = window.Recharts;
+      const { createElement: h, useState } = window.React;
+
+      function RechartsDashboard() {
+        const { moodData, symptomData, avgMood, topSymptom, totalDays } = dataPayload;
+
+        const MoodCustomTooltip = ({ active, payload }) => {
+          if (active && payload && payload.length) {
+            const d = payload[0].payload;
+            return h('div', { className: 'custom-tooltip' },
+              h('p', { className: 'label' }, `${d.fullDate}: ${d.moodName}`),
+              h('p', null, `Mood Score: ${d.moodScore}/5`),
+              h('p', null, `Pain: ${d.pain}/10`),
+              d.symptoms !== "None" ? h('p', null, `Symptoms: ${d.symptoms}`) : null
+            );
+          }
+          return null;
+        };
+
+        const SymptomCustomTooltip = ({ active, payload }) => {
+          if (active && payload && payload.length) {
+            const d = payload[0].payload;
+            return h('div', { className: 'custom-tooltip' },
+              h('p', { className: 'label' }, d.name),
+              h('p', null, `Reported ${d.count} times over 30 days`)
+            );
+          }
+          return null;
+        };
+
+        return h('div', { className: 'dashboard-card' },
+          h('div', { className: 'header-row' },
+            h('div', { className: 'title-group' },
+              h('h2', null, '30-Day Health Analytics ', h('span', { className: 'badge-recharts' }, 'Recharts')),
+              h('p', null, 'Mood & Symptom Frequency Trends')
+            ),
+            h('button', {
+              className: 'share-btn',
+              onClick: triggerNativeShare
+            },
+              h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2.5 },
+                h('path', { d: 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8' }),
+                h('polyline', { points: '16 6 12 2 8 6' }),
+                h('line', { x1: 12, y1: 2, x2: 12, y2: 15 })
+              ),
+              'Download & Share'
+            )
+          ),
+
+          // KPI Cards
+          h('div', { className: 'kpi-grid' },
+            h('div', { className: 'kpi-card' },
+              h('div', { className: 'kpi-label' }, 'Average Mood'),
+              h('div', { className: 'kpi-value' }, `${avgMood} / 5.0`)
+            ),
+            h('div', { className: 'kpi-card amber' },
+              h('div', { className: 'kpi-label' }, 'Top Symptom'),
+              h('div', { className: 'kpi-value' }, topSymptom)
+            ),
+            h('div', { className: 'kpi-card blue' },
+              h('div', { className: 'kpi-label' }, 'Days Tracked'),
+              h('div', { className: 'kpi-value' }, `${totalDays} / 30 Days`)
+            )
+          ),
+
+          // Chart 1: Mood Area Chart
+          h('div', null,
+            h('div', { className: 'section-title' }, '1. 30-Day Mood Trend (Area Chart)'),
+            h('div', { className: 'section-subtitle' }, 'Visualizing daily mood ratings (Score 5: Great to Score 1: Rough)'),
+            h('div', { className: 'chart-container' },
+              h(ResponsiveContainer, { width: '100%', height: '100%' },
+                h(AreaChart, { data: moodData, margin: { top: 10, right: 10, left: -25, bottom: 0 } },
+                  h('defs', null,
+                    h('linearGradient', { id: 'moodGrad', x1: '0', y1: '0', x2: '0', y2: '1' },
+                      h('stop', { offset: '5%', stopColor: '#0D9488', stopOpacity: 0.45 }),
+                      h('stop', { offset: '95%', stopColor: '#0D9488', stopOpacity: 0.02 })
+                    )
+                  ),
+                  h(CartesianGrid, { strokeDasharray: '3 3', stroke: '#E2E8F0' }),
+                  h(XAxis, { dataKey: 'date', tick: { fontSize: 9, fill: '#64748B' }, interval: 'preserveStartEnd' }),
+                  h(YAxis, { domain: [1, 5], ticks: [1, 2, 3, 4, 5], tick: { fontSize: 9, fill: '#64748B' } }),
+                  h(Tooltip, { content: h(MoodCustomTooltip) }),
+                  h(Area, {
+                    type: 'monotone',
+                    dataKey: 'moodScore',
+                    stroke: '#0D9488',
+                    strokeWidth: 2.5,
+                    fillOpacity: 1,
+                    fill: 'url(#moodGrad)',
+                    activeDot: { r: 5, fill: '#0F766E' }
+                  })
+                )
+              )
+            )
+          ),
+
+          // Chart 2: Symptom Frequency Bar Chart
+          h('div', { style: { marginTop: '16px' } },
+            h('div', { className: 'section-title' }, '2. 30-Day Symptom Frequency (Bar Chart)'),
+            h('div', { className: 'section-subtitle' }, 'Total occurrences across last 30 daily diary logs'),
+            h('div', { className: 'chart-container', style: { height: '180px' } },
+              symptomData.length === 0
+                ? h('div', { style: { textAlign: 'center', padding: '30px', color: '#0D9488', fontWeight: 'bold' } }, 'Zero adverse symptoms logged! Excellent medication tolerance.')
+                : h(ResponsiveContainer, { width: '100%', height: '100%' },
+                    h(BarChart, { data: symptomData, margin: { top: 10, right: 10, left: -20, bottom: 0 } },
+                      h(CartesianGrid, { strokeDasharray: '3 3', stroke: '#E2E8F0' }),
+                      h(XAxis, { dataKey: 'name', tick: { fontSize: 10, fill: '#475569' } }),
+                      h(YAxis, { allowDecimals: false, tick: { fontSize: 9, fill: '#64748B' } }),
+                      h(Tooltip, { content: h(SymptomCustomTooltip) }),
+                      h(Bar, { dataKey: 'count', radius: [6, 6, 0, 0] },
+                        symptomData.map((entry, index) =>
+                          h(Cell, { key: `cell-${index}`, fill: entry.fill })
+                        )
+                      )
+                    )
+                  )
+            )
+          )
+        );
+      }
+
+      window.ReactDOM.render(h(RechartsDashboard), document.getElementById('root'));
+    }
+
+    // Called from Android Kotlin WebView
+    window.updateDashboardData = function(jsonString) {
+      try {
+        const raw = JSON.parse(jsonString);
+        window.chartEntries = raw;
+        const processed = processData(raw);
+
+        // Update fallback elements if visible
+        const kpiMood = document.getElementById('kpi-mood');
+        const kpiSymptom = document.getElementById('kpi-symptom');
+        const kpiLogged = document.getElementById('kpi-logged');
+        if (kpiMood) kpiMood.innerText = `${processed.avgMood} / 5.0`;
+        if (kpiSymptom) kpiSymptom.innerText = processed.topSymptom;
+        if (kpiLogged) kpiLogged.innerText = `${processed.totalDays} / 30 Days`;
+
+        // If Recharts is loaded, render React Recharts
+        renderRecharts(processed);
+      } catch (err) {
+        console.error("Error updating dashboard data: ", err);
+      }
+    };
+
+    // Initial attempt with default dummy data or wait for injection
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if (window.chartEntries && window.chartEntries.length > 0) {
+          renderRecharts(processData(window.chartEntries));
+        } else {
+          // Render default 30-day template data
+          const mockEntries = [];
+          for (let i = 29; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dStr = d.toISOString().slice(0, 10);
+            mockEntries.push({
+              dateString: dStr,
+              timestamp: d.getTime(),
+              mood: i % 4 === 0 ? "Great" : i % 3 === 0 ? "Good" : i === 12 ? "Low" : "Good",
+              painLevel: i % 5 === 0 ? 3 : 1,
+              symptoms: i % 6 === 0 ? "Headache" : i % 5 === 0 ? "Fatigue" : i % 7 === 0 ? "Drowsiness" : "None"
+            });
+          }
+          window.updateDashboardData(JSON.stringify(mockEntries));
+        }
+      }, 300);
+    });
+  </script>
+</body>
+</html>
